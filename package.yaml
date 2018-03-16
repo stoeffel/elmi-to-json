@@ -1,0 +1,60 @@
+name:                elmi-to-json
+version:             0.1.0.0
+github:              "githubuser/elmi-to-json"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2018 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on Github at <https://github.com/githubuser/elmi-to-json#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+default-extensions:
+- DeriveGeneric
+- NamedFieldPuns
+
+library:
+  source-dirs:
+  - src
+  - compiler
+  dependencies:
+  - aeson == 1.2.4.0
+  - binary == 0.8.5.1
+  - bytestring == 0.10.8.2
+  - containers == 0.5.10.2
+  - text == 1.2.3.0
+
+executables:
+  elmi-to-json:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - elmi-to-json
+
+tests:
+  elmi-to-json-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - elmi-to-json
