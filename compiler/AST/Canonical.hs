@@ -79,13 +79,60 @@ data Ctor =
 -- JSON
 instance Aeson.ToJSON Annotation
 
-instance Aeson.ToJSON Type
+data TypeInJson
+  = Record
+  | Tuple
+  | Unit
+  | Var
+  | Type
+  | Aliased
+  | Function
+  deriving (Show, Generic)
+
+flattenLambda :: Type -> [Type]
+flattenLambda t =
+  case t of
+    TLambda current next -> current : flattenLambda next
+    current -> [current]
+
+instance Aeson.ToJSON Type where
+  toJSON (TType moduleName name types) =
+    Aeson.object
+      [ "type" .= Type
+      , "moduleName" .= moduleName
+      , "name" .= name
+      , "types" .= types
+      ]
+  toJSON (TVar name) = Aeson.object ["type" .= Var, "name" .= name]
+  toJSON (TRecord fields maybeName) =
+    Aeson.object ["type" .= Record, "fields" .= fields, "name" .= maybeName]
+  toJSON TUnit = Aeson.object ["type" .= Unit]
+  toJSON (TTuple a b maybeC) =
+    Aeson.object $
+    concat
+      [ ["type" .= Tuple]
+      , ["_1" .= a]
+      , ["_2" .= b]
+      , case maybeC of
+          Just c -> ["_3" .= c]
+          Nothing -> []
+      ]
+  toJSON (TAlias moduleName name fields aliasType) =
+    Aeson.object
+      [ "type" .= Aliased
+      , "moduleName" .= moduleName
+      , "name" .= name
+      , "fields" .= fields
+      , "aliasType" .= aliasType
+      ]
+  toJSON lambda = Aeson.object ["lambda" .= flattenLambda lambda]
+
+instance Aeson.ToJSON TypeInJson
 
 instance Aeson.ToJSON AliasType
 
 instance Aeson.ToJSON Alias where
-  toJSON (Alias vars recordType _) =
-    Aeson.object ["recordType" .= recordType, "vars" .= vars]
+  toJSON (Alias vars alias _) = Aeson.object ["alias" .= alias, "vars" .= vars]
 
 instance Aeson.ToJSON Union where
   toJSON (Union {_u_vars, _u_alts}) =
