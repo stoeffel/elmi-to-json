@@ -25,6 +25,7 @@ dependencies:
 default-extensions:
 - DeriveGeneric
 - NamedFieldPuns
+- OverloadedStrings
 
 library:
   source-dirs:

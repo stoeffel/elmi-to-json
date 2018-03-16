@@ -6,19 +6,21 @@ module Elm.Name
   ) where
 
 import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Encoding as Encoding
 import Data.Binary
 import qualified Data.Text as Text
-import GHC.Generics (Generic)
 
 -- NAME
 newtype Name = Name
   { _name :: Text.Text
-  } deriving (Eq, Ord, Generic, Show)
+  } deriving (Show)
 
 -- JSON
-instance Aeson.ToJSON Name
+instance Aeson.ToJSON Name where
+  toJSON = Aeson.String . _name
 
-instance Aeson.ToJSONKey Name
+instance Aeson.ToJSONKey Name where
+  toJSONKey = Aeson.ToJSONKeyText _name (Encoding.text . _name)
 
 -- INSTANCES
 instance Binary Name where

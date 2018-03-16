@@ -8,17 +8,18 @@ module Elm.Package
 import Control.Monad (liftM2)
 import qualified Data.Aeson as Aeson
 import Data.Binary (Binary, get, put)
+import Data.Semigroup ((<>))
 import Data.Text (Text)
-import GHC.Generics (Generic)
 
 -- PACKGE NAMES
 data Name = Name
   { _user :: !Text
   , _project :: !Text
-  } deriving (Generic, Show)
+  } deriving (Show)
 
 -- JSON
-instance Aeson.ToJSON Name
+instance Aeson.ToJSON Name where
+  toJSON (Name {_user, _project}) = Aeson.String (_user <> "/" <> _project)
 
 -- BINARY
 instance Binary Name where

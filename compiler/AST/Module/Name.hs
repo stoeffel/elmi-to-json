@@ -7,8 +7,8 @@ module AST.Module.Name
 
 import Control.Monad (liftM2)
 import qualified Data.Aeson as Aeson
+import Data.Aeson ((.=))
 import Data.Binary
-import GHC.Generics (Generic)
 
 import qualified Elm.Name as N
 import qualified Elm.Package as Pkg
@@ -17,10 +17,12 @@ import qualified Elm.Package as Pkg
 data Canonical = Canonical
   { _package :: !Pkg.Name
   , _module :: !N.Name
-  } deriving (Generic, Show)
+  } deriving (Show)
 
 -- JSON
-instance Aeson.ToJSON Canonical
+instance Aeson.ToJSON Canonical where
+  toJSON (Canonical {_package, _module}) =
+    Aeson.object ["package" .= _package, "module" .= _module]
 
 -- BINARY
 instance Binary Canonical where
