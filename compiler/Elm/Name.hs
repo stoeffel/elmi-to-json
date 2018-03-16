@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Elm.Name
-  ( Name
+  ( Name(..)
   ) where
 
 import qualified Data.Aeson as Aeson
@@ -13,7 +13,7 @@ import qualified Data.Text as Text
 -- NAME
 newtype Name = Name
   { _name :: Text.Text
-  } deriving (Show)
+  } deriving (Ord, Eq, Show)
 
 -- JSON
 instance Aeson.ToJSON Name where

@@ -8,6 +8,7 @@ module AST.Canonical
   ) where
 
 import Control.Monad (liftM, liftM2, liftM3, liftM4, replicateM)
+import Data.Aeson ((.=))
 import qualified Data.Aeson as Aeson
 import Data.Binary
 import qualified Data.Map as Map
@@ -53,14 +54,14 @@ data Alias =
   Alias [N.Name]
         Type
         (Maybe [(N.Name, Type)])
-  deriving (Generic, Show)
+  deriving (Show)
 
 data Union = Union
   { _u_vars :: [N.Name]
   , _u_alts :: [Ctor]
   , _u_numAlts :: Int -- CACHE numAlts for exhaustiveness checking
   , _u_opts :: CtorOpts -- CACHE which optimizations are available
-  } deriving (Generic, Show)
+  } deriving (Show)
 
 data CtorOpts
   = Normal
@@ -73,7 +74,7 @@ data Ctor =
        Index.ZeroBased
        Int
        [Type] -- CACHE length args
-  deriving (Generic, Show)
+  deriving (Show)
 
 -- JSON
 instance Aeson.ToJSON Annotation
@@ -82,13 +83,19 @@ instance Aeson.ToJSON Type
 
 instance Aeson.ToJSON AliasType
 
-instance Aeson.ToJSON Alias
+instance Aeson.ToJSON Alias where
+  toJSON (Alias vars recordType _) =
+    Aeson.object ["recordType" .= recordType, "vars" .= vars]
 
-instance Aeson.ToJSON Union
+instance Aeson.ToJSON Union where
+  toJSON (Union {_u_vars, _u_alts}) =
+    Aeson.object
+      ["vars" .= _u_vars, "ctors" .= (Map.fromList $ ctorPair <$> _u_alts)]
+
+ctorPair :: Ctor -> (N.Name, [Type])
+ctorPair (Ctor name _ _ types) = (name, types)
 
 instance Aeson.ToJSON CtorOpts
-
-instance Aeson.ToJSON Ctor
 
 -- BINARY
 instance Binary Alias where
