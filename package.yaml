@@ -30,7 +30,7 @@ default-extensions:
 library:
   source-dirs:
   - src
-  - compiler
+  - types-from-compiler
   dependencies:
   - aeson == 1.2.4.0
   - binary == 0.8.5.1
