@@ -77,7 +77,9 @@ data Ctor =
   deriving (Show)
 
 -- JSON
-instance Aeson.ToJSON Annotation
+instance Aeson.ToJSON Annotation where
+  toJSON (Forall freeVars type_) =
+    Aeson.object ["vars" .= Map.keys freeVars, "annotation" .= type_]
 
 data TypeInJson
   = Record
