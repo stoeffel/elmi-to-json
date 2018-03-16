@@ -91,12 +91,6 @@ data TypeInJson
   | Function
   deriving (Show, Generic)
 
-flattenLambda :: Type -> [Type]
-flattenLambda t =
-  case t of
-    TLambda current next -> current : flattenLambda next
-    current -> [current]
-
 instance Aeson.ToJSON Type where
   toJSON (TType moduleName name types) =
     Aeson.object
@@ -127,7 +121,14 @@ instance Aeson.ToJSON Type where
       , "fields" .= fields
       , "aliasType" .= aliasType
       ]
-  toJSON lambda = Aeson.object ["lambda" .= flattenLambda lambda]
+  toJSON (lambda@(TLambda _ _)) =
+    Aeson.object ["lambda" .= flattenLambda lambda]
+
+flattenLambda :: Type -> [Type]
+flattenLambda t =
+  case t of
+    TLambda current next -> current : flattenLambda next
+    current -> [current]
 
 instance Aeson.ToJSON TypeInJson
 
