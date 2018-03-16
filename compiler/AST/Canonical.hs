@@ -67,7 +67,7 @@ data CtorOpts
   = Normal
   | Enum
   | Unbox
-  deriving (Generic, Show)
+  deriving (Show)
 
 data Ctor =
   Ctor N.Name
@@ -94,8 +94,6 @@ instance Aeson.ToJSON Union where
 
 ctorPair :: Ctor -> (N.Name, [Type])
 ctorPair (Ctor name _ _ types) = (name, types)
-
-instance Aeson.ToJSON CtorOpts
 
 -- BINARY
 instance Binary Alias where
