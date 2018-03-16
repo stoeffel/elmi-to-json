@@ -5,14 +5,17 @@ module Lib
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary as B
 import qualified Data.ByteString.Lazy as BL
+import Data.Either (partitionEithers)
 import Elm.Interface (Interface)
+import System.Environment (getArgs)
 
 run :: IO ()
 run = do
-  result <- B.decodeFileOrFail "./TODO.elmi"
-  case result of
-    Left (_, err) -> print err -- TODO exitcode
-    Right decoded -> printJSON decoded
+  paths <- getArgs
+  result <- traverse B.decodeFileOrFail paths
+  case partitionEithers result of
+    ([], decoded) -> printJSON decoded
+    (errs, []) -> print errs -- TODO exitcode
 
-printJSON :: Interface -> IO ()
+printJSON :: [Interface] -> IO ()
 printJSON = print . Aeson.encode
