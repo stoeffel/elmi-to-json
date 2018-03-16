@@ -101,7 +101,14 @@ instance Aeson.ToJSON Type where
       ]
   toJSON (TVar name) = Aeson.object ["type" .= Var, "name" .= name]
   toJSON (TRecord fields maybeName) =
-    Aeson.object ["type" .= Record, "fields" .= fields, "name" .= maybeName]
+    Aeson.object $
+    concat
+      [ ["type" .= Record]
+      , ["fields" .= fields]
+      , case maybeName of
+          Just name -> ["extends" .= name]
+          Nothing -> []
+      ]
   toJSON TUnit = Aeson.object ["type" .= Unit]
   toJSON (TTuple a b maybeC) =
     Aeson.object $
