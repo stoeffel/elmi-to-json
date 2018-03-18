@@ -3,14 +3,13 @@
 module Args
   ( parse
   , Args(..)
-  , Subset(..)
   ) where
 
 import Control.Applicative (many)
 import Data.Semigroup ((<>))
 import Options.Applicative
-       (Parser, ParserInfo, argument, execParser, fullDesc, header, help,
-        helper, info, metavar, progDesc, str)
+       (Parser, argument, execParser, fullDesc, header, help, helper,
+        info, metavar, progDesc, str)
 import Subset (Subset)
 import qualified Subset
 
@@ -19,10 +18,8 @@ newtype Args = Args
   }
 
 parse :: IO Args
-parse = execParser options
-
-options :: ParserInfo Args
-options =
+parse =
+  execParser $
   info
     (helper <*> parser)
     (fullDesc <> progDesc "Print a greeting for TARGET" <>
