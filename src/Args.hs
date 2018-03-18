@@ -10,8 +10,9 @@ import Data.Semigroup ((<>))
 import Data.String (IsString)
 import Data.Text as T
 import Options.Applicative
-       (Mod, OptionFields, Parser, argument, execParser, fullDesc, header,
-        help, helper, idm, info, long, metavar, progDesc, str)
+       (Mod, OptionFields, Parser, ParserInfo, argument, execParser,
+        fullDesc, header, help, helper, idm, info, long, metavar, progDesc,
+        str)
 
 data Args = Args
   { modulePaths :: [FilePath] -- TODO make this a union either all or subset
@@ -20,6 +21,7 @@ data Args = Args
 parse :: IO Args
 parse = execParser options
 
+options :: ParserInfo Args
 options =
   info
     (helper <*> parser)
