@@ -7,12 +7,9 @@ module Args
 
 import Control.Applicative (many)
 import Data.Semigroup ((<>))
-import Data.String (IsString)
-import Data.Text as T
 import Options.Applicative
-       (Mod, OptionFields, Parser, ParserInfo, argument, execParser,
-        fullDesc, header, help, helper, idm, info, long, metavar, progDesc,
-        str)
+       (Parser, ParserInfo, argument, execParser, fullDesc, header, help,
+        helper, info, metavar, progDesc, str)
 
 data Args = Args
   { modulePaths :: [FilePath] -- TODO make this a union either all or subset
