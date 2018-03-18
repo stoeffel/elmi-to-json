@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 
 default-extensions:
+- ApplicativeDo
 - DeriveGeneric
 - NamedFieldPuns
 - OverloadedStrings
@@ -36,6 +37,7 @@ library:
   - binary == 0.8.5.1
   - bytestring == 0.10.8.2
   - containers == 0.5.10.2
+  - optparse-applicative == 0.14.2.0
   - text == 1.2.3.0
 
 executables:

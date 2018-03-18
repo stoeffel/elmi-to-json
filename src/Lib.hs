@@ -2,6 +2,8 @@ module Lib
   ( run
   ) where
 
+import Args (Args(..))
+import qualified Args
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary as B
 import qualified Data.ByteString.Lazy as BL
@@ -11,8 +13,8 @@ import System.Environment (getArgs)
 
 run :: IO ()
 run = do
-  paths <- getArgs
-  result <- traverse B.decodeFileOrFail paths
+  Args {modulePaths} <- Args.parse
+  result <- traverse B.decodeFileOrFail modulePaths
   case partitionEithers result of
     ([], decoded) -> printJSON decoded
     (errs, []) -> print errs -- TODO exitcode
