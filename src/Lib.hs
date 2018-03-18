@@ -13,7 +13,7 @@ import System.Environment (getArgs)
 
 run :: IO ()
 run = do
-  Args {modulePaths} <- Args.parse
+  Args {modulePaths} <- Args.parse -- TODO map to elmi path
   result <- traverse B.decodeFileOrFail modulePaths
   case partitionEithers result of
     ([], decoded) -> printJSON decoded
