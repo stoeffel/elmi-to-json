@@ -10,6 +10,9 @@ import System.FilePath
        (FilePath, (<.>), (</>), dropExtension, splitDirectories,
         takeExtension)
 
+all :: IO [FilePath]
+all = filter ((==) ".elmi" . takeExtension) <$> getDirectoryContents elmStuff
+
 fromModulePath :: FilePath -> FilePath
 fromModulePath modulePath
   -- TODO find elm root (elm.json)
@@ -20,6 +23,3 @@ elmStuff = "elm-stuff" </> "0.19.0"
 
 dasherize :: FilePath -> T.Text
 dasherize = T.intercalate "-" . fmap T.pack . splitDirectories . dropExtension
-
-all :: IO [FilePath]
-all = filter ((==) ".elmi" . takeExtension) <$> getDirectoryContents elmStuff
