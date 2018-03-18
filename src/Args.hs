@@ -11,14 +11,12 @@ import Data.Semigroup ((<>))
 import Options.Applicative
        (Parser, ParserInfo, argument, execParser, fullDesc, header, help,
         helper, info, metavar, progDesc, str)
+import Subset (Subset)
+import qualified Subset
 
 newtype Args = Args
   { infoFor :: Subset FilePath
   }
-
-data Subset a
-  = All
-  | Subset [a]
 
 parse :: IO Args
 parse = execParser options
@@ -37,10 +35,4 @@ parser = do
     argument
       str
       (metavar "MODULE_PATHS " <> help "Get info for specific modules.")
-  return Args {infoFor = allIfEmpty modulePaths}
-
-allIfEmpty :: [a] -> Subset a
-allIfEmpty subset =
-  case subset of
-    [] -> All
-    xs -> Subset xs
+  return Args {infoFor = Subset.allIfEmpty modulePaths}

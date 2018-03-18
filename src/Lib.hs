@@ -2,13 +2,14 @@ module Lib
   ( run
   ) where
 
-import Args (Args(..), Subset(..))
+import Args (Args(..))
 import qualified Args
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary as B
 import Data.Either (partitionEithers)
 import qualified Data.Text as T
 import Elm.Interface (Interface)
+import Subset (Subset(..))
 import System.Directory (getDirectoryContents)
 import System.FilePath
        (FilePath, (<.>), (</>), dropExtension, splitDirectories,
