@@ -3,6 +3,7 @@
 module Args
   ( parse
   , Args(..)
+  , Subset(..)
   ) where
 
 import Control.Applicative (many)
@@ -11,9 +12,13 @@ import Options.Applicative
        (Parser, ParserInfo, argument, execParser, fullDesc, header, help,
         helper, info, metavar, progDesc, str)
 
-data Args = Args
-  { modulePaths :: [FilePath] -- TODO make this a union either all or subset
+newtype Args = Args
+  { infoFor :: Subset FilePath
   }
+
+data Subset a
+  = All
+  | Subset [a]
 
 parse :: IO Args
 parse = execParser options
@@ -32,4 +37,10 @@ parser = do
     argument
       str
       (metavar "MODULE_PATHS " <> help "Get info for specific modules.")
-  return Args {modulePaths = modulePaths}
+  return Args {infoFor = allIfEmpty modulePaths}
+
+allIfEmpty :: [a] -> Subset a
+allIfEmpty subset =
+  case subset of
+    [] -> All
+    xs -> Subset xs

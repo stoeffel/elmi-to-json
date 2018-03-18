@@ -2,7 +2,7 @@ module Lib
   ( run
   ) where
 
-import Args (Args(..))
+import Args (Args(..), Subset(..))
 import qualified Args
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary as B
@@ -14,7 +14,8 @@ import System.FilePath
 
 run :: IO ()
 run = do
-  Args {modulePaths} <- Args.parse -- TODO map to elmi path
+  Args {infoFor} <- Args.parse
+  let modulePaths = infoForWhatSubset infoFor
   result <- traverse (B.decodeFileOrFail . modulePathToElmi) modulePaths
   case partitionEithers result of
     ([], decoded) -> printJSON decoded
@@ -23,6 +24,12 @@ run = do
 
 printJSON :: [Interface] -> IO ()
 printJSON = print . Aeson.encode
+
+infoForWhatSubset :: Subset FilePath -> [FilePath]
+infoForWhatSubset subset =
+  case subset of
+    All -> [] -- TODO
+    Subset modulePaths -> modulePaths
 
 modulePathToElmi :: FilePath -> FilePath
 modulePathToElmi modulePath
