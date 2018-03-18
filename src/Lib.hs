@@ -9,13 +9,15 @@ import qualified Data.Binary as B
 import Data.Either (partitionEithers)
 import qualified Data.Text as T
 import Elm.Interface (Interface)
+import System.Directory (getDirectoryContents)
 import System.FilePath
-       (FilePath, (<.>), (</>), dropExtension, splitDirectories)
+       (FilePath, (<.>), (</>), dropExtension, splitDirectories,
+        takeExtension)
 
 run :: IO ()
 run = do
   Args {infoFor} <- Args.parse
-  let modulePaths = infoForWhatSubset infoFor
+  modulePaths <- infoForWhatSubset infoFor
   result <- traverse (B.decodeFileOrFail . modulePathToElmi) modulePaths
   case partitionEithers result of
     ([], decoded) -> printJSON decoded
@@ -25,16 +27,21 @@ run = do
 printJSON :: [Interface] -> IO ()
 printJSON = print . Aeson.encode
 
-infoForWhatSubset :: Subset FilePath -> [FilePath]
+infoForWhatSubset :: Subset FilePath -> IO [FilePath]
 infoForWhatSubset subset =
   case subset of
-    All -> [] -- TODO
-    Subset modulePaths -> modulePaths
+    Subset modulePaths -> return modulePaths
+    All ->
+      filter ((==) ".elmi" . takeExtension) <$>
+      getDirectoryContents elmStuffPath
 
 modulePathToElmi :: FilePath -> FilePath
 modulePathToElmi modulePath
   -- TODO find elm root (elm.json)
- = "elm-stuff" </> "0.19.0" </> (T.unpack $ dasherizePath modulePath) <.> "elmi"
+ = elmStuffPath </> T.unpack (dasherizePath modulePath) <.> "elmi"
+
+elmStuffPath :: FilePath
+elmStuffPath = "elm-stuff" </> "0.19.0"
 
 dasherizePath :: FilePath -> T.Text
 dasherizePath =
