@@ -34,7 +34,7 @@ run = do
 infoForModule :: FilePath -> IO Info
 infoForModule modulePath = do
   interface <- B.decodeFile modulePath
-  return Info {moduleName = Elmi.moduleName modulePath, interface = interface}
+  return Info {moduleName = Elmi.toModuleName modulePath, interface = interface}
 
 printJSON :: [Info] -> IO ()
 printJSON = print . Aeson.encode

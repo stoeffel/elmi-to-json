@@ -1,7 +1,7 @@
 module Elmi
   ( all
   , fromModulePath
-  , moduleName
+  , toModuleName
   ) where
 
 import qualified Data.Text as T
@@ -15,7 +15,7 @@ all :: IO [FilePath]
 all = do
   contents <- getDirectoryContents elmStuff
   let onlyElmi = filter ((==) ".elmi" . takeExtension) contents
-  return $ ((</>) elmStuff) <$> onlyElmi
+  return $ fmap (elmStuff </>) onlyElmi
 
 fromModulePath :: FilePath -> FilePath
 fromModulePath modulePath
@@ -24,8 +24,8 @@ fromModulePath modulePath
  = elmStuff </> T.unpack (dasherize modulePath) <.> "elmi"
 
 -- TODO check source-dirs
-moduleName :: FilePath -> T.Text
-moduleName = T.replace "-" "." . T.pack . dropExtension . takeFileName
+toModuleName :: FilePath -> T.Text
+toModuleName = T.replace "-" "." . T.pack . dropExtension . takeFileName
 
 elmStuff :: FilePath
 elmStuff = "elm-stuff" </> "0.19.0"
