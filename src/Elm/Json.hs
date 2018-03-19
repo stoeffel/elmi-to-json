@@ -10,14 +10,13 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import Data.Typeable (Typeable, cast)
-import GHC.Generics (Generic)
 import qualified System.Directory as Dir
 import System.FilePath (FilePath, (<.>), (</>))
 
 data ElmJson = ElmJson
   { sourceDirecotries :: [FilePath]
   , elmVersion :: T.Text
-  } deriving (Generic)
+  }
 
 instance Aeson.FromJSON ElmJson where
   parseJSON =
