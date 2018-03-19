@@ -29,7 +29,7 @@ for modulePath = do
         Info {moduleName = Elmi.toModuleName modulePath, interface = interface}
     Left _ -> throwM (DecodingElmiFailed modulePath)
 
-data DecodingElmiFailed =
+newtype DecodingElmiFailed =
   DecodingElmiFailed FilePath
   deriving (Typeable)
 
