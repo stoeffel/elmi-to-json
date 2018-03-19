@@ -4,6 +4,7 @@ module Lib
 
 import Args (Args(..))
 import qualified Args
+import qualified Control.Concurrent.Async as Async
 import qualified Data.Aeson as Aeson
 import qualified Data.Binary as B
 import qualified Data.Text as T
@@ -27,7 +28,7 @@ run = do
     case infoFor of
       All -> Elmi.all
       Subset modulePaths -> return $ Elmi.fromModulePath <$> modulePaths
-  result <- traverse infoForModule modulePaths
+  result <- Async.mapConcurrently infoForModule modulePaths
   printJSON result
 
 infoForModule :: FilePath -> IO Info

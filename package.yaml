@@ -33,6 +33,7 @@ library:
   - types-from-compiler
   dependencies:
   - aeson == 1.2.4.0
+  - async == 2.1.1.1
   - binary == 0.8.5.1
   - bytestring == 0.10.8.2
   - containers == 0.5.10.2
