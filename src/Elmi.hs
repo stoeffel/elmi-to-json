@@ -1,15 +1,24 @@
 module Elmi
-  ( all
-  , fromModulePath
+  ( for
   , toModuleName
   ) where
 
 import qualified Data.Text as T
+import qualified Elm.Json
+import Elm.Json (ElmJson(..))
 import Prelude hiding (all)
+import Subset (Subset(..))
 import System.Directory (getDirectoryContents)
 import System.FilePath
        (FilePath, (<.>), (</>), dropExtension, splitDirectories,
         takeExtension, takeFileName)
+
+for :: Subset FilePath -> IO [FilePath]
+for subset = do
+  ElmJson {elmVersion} <- Elm.Json.load
+  case subset of
+    All -> all elmVersion
+    Subset modulePaths -> return $ fromModulePath elmVersion <$> modulePaths
 
 all :: T.Text -> IO [FilePath]
 all version = do
