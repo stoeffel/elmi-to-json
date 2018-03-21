@@ -7,15 +7,15 @@ module System.FilePath.Extra
 import qualified Data.List as L
 import qualified Data.Text as T
 import qualified System.Directory as Dir
-import System.FilePath (FilePath, (<.>), (</>))
+import System.FilePath (FilePath, (<.>))
 import qualified System.FilePath as F
 
 findAll :: T.Text -> FilePath -> IO [FilePath]
 findAll extension dir = do
   contents <- Dir.getDirectoryContents dir
-  let found =
-        filter ((==) ("" <.> T.unpack extension) . F.takeExtension) contents
-  return $ fmap (dir </>) found
+  return $
+    F.combine dir <$>
+    filter ((==) ("" <.> T.unpack extension) . F.takeExtension) contents
 
 maybeMakeRelative :: FilePath -> FilePath -> Maybe FilePath
 maybeMakeRelative file dir =
