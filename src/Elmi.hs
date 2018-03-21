@@ -21,24 +21,23 @@ for :: Subset FilePath -> IO [FilePath]
 for subset = do
   ElmJson {elmVersion, sourceDirecotries} <- Elm.Json.load
   case subset of
-    All -> findAll "elmi" $ elmStuff elmVersion
+    All -> findAll "elmi" (elmStuff elmVersion)
     Subset modulePaths ->
-      return $ fromModulePath elmVersion sourceDirecotries <$> modulePaths
+      return
+        (toElmiPath elmVersion . removeSourceDir sourceDirecotries <$>
+         modulePaths)
 
-fromModulePath :: T.Text -> [FilePath] -> FilePath -> FilePath
-fromModulePath version sourceDirecotries modulePath
+toElmiPath :: T.Text -> FilePath -> FilePath
+toElmiPath version modulePath
   -- TODO find elm root (elm.json)
- =
-  elmStuff version </>
-  T.unpack (dasherize $ removeSourceDir modulePath sourceDirecotries) <.>
-  "elmi"
+ = elmStuff version </> T.unpack (dasherize modulePath) <.> "elmi"
 
 elmStuff :: T.Text -> FilePath
 elmStuff version = "elm-stuff" </> T.unpack version
 
-removeSourceDir :: FilePath -> [FilePath] -> FilePath
-removeSourceDir file =
-  M.fromMaybe file . M.listToMaybe . M.mapMaybe (maybeMakeRelative file)
+removeSourceDir :: [FilePath] -> FilePath -> FilePath
+removeSourceDir dirs file =
+  M.fromMaybe file $ M.listToMaybe $ M.mapMaybe (maybeMakeRelative file) dirs
 
 dasherize :: FilePath -> T.Text
 dasherize = T.intercalate "-" . fmap T.pack . splitDirectories . dropExtension
