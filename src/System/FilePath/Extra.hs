@@ -23,6 +23,5 @@ maybeMakeRelative file dir =
     then Just (F.makeRelative dir file)
     else Nothing
 
-dasherize :: FilePath -> T.Text
-dasherize =
-  T.intercalate "-" . fmap T.pack . F.splitDirectories . F.dropExtension
+dasherize :: FilePath -> FilePath
+dasherize = L.intercalate "-" . F.splitDirectories . F.dropExtension

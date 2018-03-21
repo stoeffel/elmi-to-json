@@ -31,7 +31,7 @@ for subset = do
 toElmiPath :: T.Text -> FilePath -> FilePath
 toElmiPath version modulePath
   -- TODO find elm root (elm.json)
- = elmStuff version </> T.unpack (FE.dasherize modulePath) <.> "elmi"
+ = elmStuff version </> FE.dasherize modulePath <.> "elmi"
 
 elmStuff :: T.Text -> FilePath
 elmStuff version = "elm-stuff" </> T.unpack version
