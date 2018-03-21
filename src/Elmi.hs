@@ -8,6 +8,7 @@ import qualified Data.Text as T
 import qualified Elm.Json
 import Elm.Json (ElmJson(..))
 import Subset (Subset(..))
+import qualified System.Directory as Dir
 import System.FilePath (FilePath, (<.>), (</>))
 import qualified System.FilePath as F
 import qualified System.FilePath.Extra as FE
@@ -20,9 +21,11 @@ for subset = do
   ElmJson {elmVersion, sourceDirecotries} <- Elm.Json.load
   case subset of
     All -> FE.findAll "elmi" (elmStuff elmVersion)
-    Subset modulePaths ->
+    Subset modulePaths -> do
+      cwd <- Dir.getCurrentDirectory
       return
-        (toElmiPath elmVersion . removeSourceDir sourceDirecotries <$>
+        (toElmiPath elmVersion .
+         removeSourceDir sourceDirecotries . F.makeRelative cwd . F.normalise <$>
          modulePaths)
 
 toElmiPath :: T.Text -> FilePath -> FilePath
