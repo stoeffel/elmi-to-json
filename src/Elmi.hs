@@ -20,7 +20,7 @@ for :: Subset FilePath -> IO [FilePath]
 for subset = do
   ElmJson {elmVersion, sourceDirecotries} <- Elm.Json.load
   case subset of
-    All -> FE.findAll "elmi" (elmStuff elmVersion)
+    All -> FE.findAll ".elmi" (elmStuff elmVersion)
     Subset modulePaths -> do
       cwd <- Dir.getCurrentDirectory
       return
