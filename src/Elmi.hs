@@ -18,20 +18,20 @@ toModuleName = T.replace "-" "." . T.pack . F.dropExtension . F.takeFileName
 
 for :: Subset FilePath -> IO [FilePath]
 for subset = do
-  ElmJson {elmVersion, sourceDirecotries} <- Elm.Json.load
+  elmRoot <- FE.findUp ("elm" <.> "json")
+  elmJson@ElmJson {elmVersion} <- Elm.Json.load elmRoot
   case subset of
-    All -> FE.findAll ".elmi" (elmStuff elmVersion)
-    Subset modulePaths -> do
-      cwd <- Dir.getCurrentDirectory
-      return
-        (toElmiPath elmVersion .
-         removeSourceDir sourceDirecotries . F.makeRelative cwd . F.normalise <$>
-         modulePaths)
+    All -> FE.findAll ".elmi" (elmRoot </> elmStuff elmVersion)
+    Subset modulePaths -> traverse (toElmiPath elmRoot elmJson) modulePaths
 
-toElmiPath :: T.Text -> FilePath -> FilePath
-toElmiPath version modulePath
-  -- TODO find elm root (elm.json)
- = elmStuff version </> FE.dasherize modulePath <.> "elmi"
+toElmiPath :: FilePath -> ElmJson -> FilePath -> IO FilePath
+toElmiPath elmRoot ElmJson {elmVersion, sourceDirecotries} modulePath = do
+  absolute <- Dir.makeAbsolute modulePath
+  let elmiName =
+        FE.dasherize $
+        removeSourceDir sourceDirecotries $
+        F.makeRelative elmRoot $ F.normalise absolute
+  return (elmRoot </> elmStuff elmVersion </> elmiName <.> "elmi")
 
 elmStuff :: T.Text -> FilePath
 elmStuff version = "elm-stuff" </> T.unpack version

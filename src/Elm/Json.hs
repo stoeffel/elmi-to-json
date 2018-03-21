@@ -10,7 +10,6 @@ import qualified Data.ByteString.Lazy as BL
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import Data.Typeable (Typeable, cast)
-import qualified System.Directory as Dir
 import System.FilePath (FilePath, (<.>), (</>))
 
 data ElmJson = ElmJson
@@ -23,10 +22,9 @@ instance Aeson.FromJSON ElmJson where
     Aeson.withObject "Coord" $ \v ->
       ElmJson <$> v .: "source-directories" <*> v .: "elm-version"
 
-load :: IO ElmJson
-load = do
-  cwd <- Dir.getCurrentDirectory
-  let elmJsonPath = (cwd </> "elm" <.> "json")
+load :: FilePath -> IO ElmJson
+load root = do
+  let elmJsonPath = (root </> "elm" <.> "json")
   contents <- BL.readFile elmJsonPath
   case Aeson.eitherDecode contents of
     Right json -> return json
