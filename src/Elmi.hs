@@ -26,16 +26,16 @@ for subset = do
 
 toElmiPath :: FilePath -> ElmJson -> FilePath -> IO FilePath
 toElmiPath elmRoot ElmJson {elmVersion, sourceDirecotries} modulePath = do
-  absolute <- Dir.makeAbsolute modulePath
-  let elmiName =
-        FE.dasherize $
-        removeSourceDir sourceDirecotries $
-        F.makeRelative elmRoot $ F.normalise absolute
+  relativeToRoot <-
+    (F.makeRelative elmRoot . F.normalise) <$> Dir.makeAbsolute modulePath
+  let elmiName = FE.dasherize $ removeSourceDir relativeToRoot sourceDirecotries
   return (elmRoot </> elmStuff elmVersion </> elmiName <.> "elmi")
 
 elmStuff :: T.Text -> FilePath
 elmStuff version = "elm-stuff" </> T.unpack version
 
-removeSourceDir :: [FilePath] -> FilePath -> FilePath
-removeSourceDir dirs file =
-  M.fromMaybe file $ M.listToMaybe $ M.mapMaybe (FE.maybeMakeRelative file) dirs
+removeSourceDir :: FilePath -> [FilePath] -> FilePath
+removeSourceDir file dirs =
+  case M.mapMaybe (FE.maybeMakeRelative file) dirs of
+    (x:_) -> x
+    [] -> file
