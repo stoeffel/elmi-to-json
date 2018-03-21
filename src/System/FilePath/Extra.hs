@@ -19,7 +19,7 @@ findAll extension dir = do
 
 maybeMakeRelative :: FilePath -> FilePath -> Maybe FilePath
 maybeMakeRelative file dir =
-  if file `L.isPrefixOf` dir
+  if dir `L.isPrefixOf` file
     then Just (F.makeRelative dir file)
     else Nothing
 
