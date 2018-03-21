@@ -45,11 +45,6 @@ f a _ =
 
 # TODO
 
-- [x] add compiler license
-- [x] nicer output
-  - [x] nicer strucutre
-  - [x] ToJSON instance for AST.Canonical
-- [ ] link to compiler
 - [ ] setup travis for generating bins
 - [ ] setup npm
 
