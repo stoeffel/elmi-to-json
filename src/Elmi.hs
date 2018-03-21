@@ -14,6 +14,9 @@ import System.FilePath
        (FilePath, (<.>), (</>), dropExtension, makeRelative,
         splitDirectories, takeExtension, takeFileName)
 
+toModuleName :: FilePath -> T.Text
+toModuleName = T.replace "-" "." . T.pack . dropExtension . takeFileName
+
 for :: Subset FilePath -> IO [FilePath]
 for subset = do
   ElmJson {elmVersion, sourceDirecotries} <- Elm.Json.load
@@ -32,23 +35,18 @@ fromModulePath :: T.Text -> [FilePath] -> FilePath -> FilePath
 fromModulePath version sourceDirecotries modulePath
   -- TODO find elm root (elm.json)
  =
-  elmStuff version </> T.unpack (toElmiName sourceDirecotries modulePath) <.>
+  elmStuff version </>
+  T.unpack (dasherize $ removeSourceDir sourceDirecotries modulePath) <.>
   "elmi"
 
-toElmiName :: [FilePath] -> FilePath -> T.Text
-toElmiName sourceDirecotries = dasherize . removeSourceDir sourceDirecotries
+elmStuff :: T.Text -> FilePath
+elmStuff version = "elm-stuff" </> T.unpack version
 
 removeSourceDir :: [FilePath] -> FilePath -> FilePath
 removeSourceDir dirs dir =
   case L.find (`L.isPrefixOf` dir) dirs of
     Just found -> makeRelative found dir
     Nothing -> dir
-
-toModuleName :: FilePath -> T.Text
-toModuleName = T.replace "-" "." . T.pack . dropExtension . takeFileName
-
-elmStuff :: T.Text -> FilePath
-elmStuff version = "elm-stuff" </> T.unpack version
 
 dasherize :: FilePath -> T.Text
 dasherize = T.intercalate "-" . fmap T.pack . splitDirectories . dropExtension
