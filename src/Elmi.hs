@@ -40,7 +40,7 @@ toElmiName sourceDirecotries = dasherize . removeSourceDir sourceDirecotries
 
 removeSourceDir :: [FilePath] -> FilePath -> FilePath
 removeSourceDir dirs dir =
-  case L.find ((`T.isPrefixOf` T.pack dir) . T.pack) dirs of
+  case L.find (`L.isPrefixOf` dir) dirs of
     Just found -> makeRelative found dir
     Nothing -> dir
 
