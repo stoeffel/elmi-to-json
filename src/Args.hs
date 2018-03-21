@@ -7,9 +7,7 @@ module Args
 
 import Control.Applicative (many)
 import Data.Semigroup ((<>))
-import Options.Applicative
-       (Parser, argument, execParser, fullDesc, header, help, helper,
-        info, metavar, progDesc, str)
+import qualified Options.Applicative as A
 import Subset (Subset)
 import qualified Subset
 
@@ -19,17 +17,17 @@ newtype Args = Args
 
 parse :: IO Args
 parse =
-  execParser $
-  info
-    (helper <*> parser)
-    (fullDesc <> progDesc "Print a greeting for TARGET" <>
-     header "hello - a test for optparse-applicative")
+  A.execParser $
+  A.info
+    (A.helper <*> parser)
+    (A.fullDesc <> A.progDesc "Print a greeting for TARGET" <>
+     A.header "hello - a test for optparse-applicative")
 
-parser :: Parser Args
+parser :: A.Parser Args
 parser = do
   modulePaths <-
     many $
-    argument
-      str
-      (metavar "MODULE_PATHS " <> help "Get info for specific modules.")
+    A.argument
+      A.str
+      (A.metavar "MODULE_PATHS " <> A.help "Get info for specific modules.")
   return Args {infoFor = Subset.allIfEmpty modulePaths}
