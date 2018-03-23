@@ -5,14 +5,13 @@ module Lib
 import Args (Args(..))
 import qualified Args
 import qualified Control.Concurrent.Async as Async
-import Control.Exception.Safe (SomeAsyncException, withException)
+import qualified Control.Exception.Safe as ES
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
 import qualified Elmi
 import qualified Info
 import Info (Info)
 
--- TODO error handling, change to ExceptT
 run :: IO ()
 run = do
   Args {infoFor, maybeOutput} <- Args.parse
@@ -24,5 +23,6 @@ run = do
 
 decodeElmi :: [FilePath] -> IO [Info]
 decodeElmi modulePaths =
-  Async.mapConcurrently Info.for modulePaths `withException`
-  (print :: SomeAsyncException -> IO ())
+  ES.withException
+    (Async.mapConcurrently Info.for modulePaths)
+    (print :: ES.SomeAsyncException -> IO ())
