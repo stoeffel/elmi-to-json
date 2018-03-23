@@ -17,11 +17,13 @@ run :: IO ()
 run = do
   Args {infoFor, maybeOutput} <- Args.parse
   modulePaths <- Elmi.for infoFor
-  result <-
-    Async.mapConcurrently Info.for modulePaths `withException`
-    (\e -> print (e :: SomeAsyncException)) `finally`
-    return () :: IO [Info]
-  let encoded = Aeson.encode result
+  result <- Aeson.encode <$> decodeElmi modulePaths
   case maybeOutput of
-    Just output -> BL.writeFile output encoded
-    Nothing -> print encoded
+    Just output -> BL.writeFile output result
+    Nothing -> print result
+
+decodeElmi :: [FilePath] -> IO [Info]
+decodeElmi modulePaths =
+  Async.mapConcurrently Info.for modulePaths `withException`
+  (print :: SomeAsyncException -> IO ()) `finally`
+  return ()
