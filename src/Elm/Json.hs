@@ -1,15 +1,18 @@
+{-# LANGUAGE DeriveAnyClass #-}
+
 module Elm.Json
   ( ElmJson(..)
   , load
   ) where
 
-import Control.Exception.Safe
+import Control.Exception.Safe (Exception)
+import qualified Control.Exception.Safe as ES
 import qualified Data.Aeson as Aeson
 import Data.Aeson ((.:))
 import qualified Data.ByteString.Lazy as BL
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
-import Data.Typeable (Typeable, cast)
+import Data.Typeable (Typeable)
 import System.FilePath (FilePath, (<.>), (</>))
 
 data ElmJson = ElmJson
@@ -28,17 +31,11 @@ load root = do
   contents <- BL.readFile elmJsonPath
   case Aeson.eitherDecode contents of
     Right json -> return json
-    Left _ -> throwM (DecodingElmJsonFailed elmJsonPath)
+    Left _ -> ES.throwM (DecodingElmJsonFailed elmJsonPath)
 
 newtype DecodingElmJsonFailed =
   DecodingElmJsonFailed FilePath
-  deriving (Typeable)
+  deriving (Typeable, Exception)
 
 instance Show DecodingElmJsonFailed where
   show (DecodingElmJsonFailed path) = "Couldn't decode " <> path
-
-instance Exception DecodingElmJsonFailed where
-  toException = toException . SomeAsyncException
-  fromException se = do
-    SomeAsyncException e <- fromException se
-    cast e

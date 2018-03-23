@@ -6,6 +6,7 @@ import Args (Args(..))
 import qualified Args
 import qualified Control.Concurrent.Async as Async
 import Control.Exception.Safe
+       (SomeAsyncException, finally, withException)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
 import qualified Elmi
