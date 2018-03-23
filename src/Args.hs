@@ -5,14 +5,15 @@ module Args
   , Args(..)
   ) where
 
-import Control.Applicative (many)
+import Control.Applicative (many, optional)
 import Data.Semigroup ((<>))
 import qualified Options.Applicative as A
 import Subset (Subset)
 import qualified Subset
 
-newtype Args = Args
+data Args = Args
   { infoFor :: Subset FilePath
+  , maybeOutput :: Maybe FilePath
   }
 
 parse :: IO Args
@@ -30,4 +31,9 @@ parser = do
     A.argument
       A.str
       (A.metavar "MODULE_PATHS" <> A.help "Get info for specific modules.")
-  return Args {infoFor = Subset.allIfEmpty modulePaths}
+  maybeOutput <-
+    optional $
+    A.strOption
+      (A.long "output" <> A.short 'o' <> A.help "Output info to a file.")
+  return
+    Args {infoFor = Subset.allIfEmpty modulePaths, maybeOutput = maybeOutput}
