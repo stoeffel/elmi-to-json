@@ -92,12 +92,12 @@ data TypeInJson
   deriving (Show, Generic)
 
 instance Aeson.ToJSON Type where
-  toJSON (TType moduleName name types) =
+  toJSON (TType moduleName name vars) =
     Aeson.object
       [ "type" .= Type
       , "moduleName" .= moduleName
       , "name" .= name
-      , "types" .= types
+      , "vars" .= vars
       ]
   toJSON (TVar name) = Aeson.object ["type" .= Var, "name" .= name]
   toJSON (TRecord fields maybeName) =
