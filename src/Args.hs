@@ -20,8 +20,8 @@ parse =
   A.execParser $
   A.info
     (A.helper <*> parser)
-    (A.fullDesc <> A.progDesc "Print a greeting for TARGET" <>
-     A.header "hello - a test for optparse-applicative")
+    (A.fullDesc <> A.progDesc "Get info for specific modules." <>
+     A.header "elmi-to-json - Convert the interface info into json.")
 
 parser :: A.Parser Args
 parser = do
@@ -29,5 +29,5 @@ parser = do
     many $
     A.argument
       A.str
-      (A.metavar "MODULE_PATHS " <> A.help "Get info for specific modules.")
+      (A.metavar "MODULE_PATHS" <> A.help "Get info for specific modules.")
   return Args {infoFor = Subset.allIfEmpty modulePaths}
