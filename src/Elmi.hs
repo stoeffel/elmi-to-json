@@ -1,6 +1,7 @@
 module Elmi
   ( for
   , toModuleName
+  , toModulePath
   ) where
 
 import qualified Data.Maybe as M
@@ -15,6 +16,13 @@ import qualified System.FilePath.Extra as FE
 
 toModuleName :: FilePath -> T.Text
 toModuleName = T.replace "-" "." . T.pack . F.dropExtension . F.takeFileName
+
+toModulePath :: FilePath -> FilePath
+toModulePath
+  -- TODO search in source-direcotries
+ =
+  flip F.addExtension "elm" .
+  T.unpack . T.replace "-" "/" . T.pack . F.dropExtension . F.takeFileName
 
 for :: Subset FilePath -> IO [FilePath]
 for subset = do

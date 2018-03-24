@@ -15,9 +15,11 @@ import Data.Typeable (Typeable)
 import Elm.Interface (Interface)
 import qualified Elmi
 import GHC.Generics (Generic)
+import System.FilePath (FilePath)
 
 data Info = Info
   { moduleName :: T.Text
+  , modulePath :: FilePath
   , interface :: Interface
   } deriving (Generic)
 
@@ -29,7 +31,11 @@ for modulePath = do
   case result of
     Right interface ->
       return
-        Info {moduleName = Elmi.toModuleName modulePath, interface = interface}
+        Info
+        { modulePath = Elmi.toModulePath modulePath
+        , moduleName = Elmi.toModuleName modulePath
+        , interface = interface
+        }
     Left _ -> ES.throwM (DecodingElmiFailed modulePath)
 
 newtype DecodingElmiFailed =
