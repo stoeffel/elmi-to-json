@@ -25,18 +25,19 @@ data Info = Info
 
 instance Aeson.ToJSON Info
 
-for :: FilePath -> IO Info
-for modulePath = do
-  result <- B.decodeFileOrFail modulePath
+for :: [FilePath] -> FilePath -> IO Info
+for sourceDirecotries elmiPath = do
+  result <- B.decodeFileOrFail elmiPath
   case result of
-    Right interface ->
+    Right interface -> do
+      modulePath <- Elmi.toModulePath sourceDirecotries elmiPath
       return
         Info
-        { modulePath = Elmi.toModulePath modulePath
-        , moduleName = Elmi.toModuleName modulePath
+        { modulePath = modulePath
+        , moduleName = Elmi.toModuleName elmiPath
         , interface = interface
         }
-    Left _ -> ES.throwM (DecodingElmiFailed modulePath)
+    Left _ -> ES.throwM (DecodingElmiFailed elmiPath)
 
 newtype DecodingElmiFailed =
   DecodingElmiFailed FilePath
