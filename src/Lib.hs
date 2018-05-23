@@ -33,7 +33,7 @@ runUnsafe Args {infoFor, maybeOutput} = do
     Async.mapConcurrently (Info.for sourceDirecotries) modulePaths
   case maybeOutput of
     Just output -> BL.writeFile output result
-    Nothing -> print result
+    Nothing -> BL.putStr result
 
 onError :: Args -> SomeException -> IO ()
 onError Args {infoFor} e =
