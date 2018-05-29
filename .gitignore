@@ -1,3 +1,4 @@
 .stack-work/
 elmi-to-json.cabal
 *~
+/tmp_test_workspace/
