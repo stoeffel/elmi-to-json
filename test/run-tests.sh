@@ -2,6 +2,7 @@
 
 set -exv
 
+stack build
 ELMI_PATH="$(stack path --local-install-root)/bin/elmi-to-json"
 rm -Rf tmp_test_workspace
 mkdir -p tmp_test_workspace
