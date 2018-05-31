@@ -9,7 +9,6 @@ import Control.Monad (liftM4)
 import Data.Aeson ((.=))
 import Data.Binary
 import qualified Data.Map as Map
-import GHC.Generics (Generic)
 
 import qualified AST.Canonical as Can
 import qualified AST.Utils.Binop as Binop
@@ -50,19 +49,21 @@ instance Aeson.ToJSON Interface where
       , "binops" .= Aeson.toJSON _binops
       ]
 
+-- This is used in the json output
 data Scope
   = Private
   | Public (OpenOrClosed)
-  deriving (Show, Generic)
+  deriving (Show)
 
-instance Aeson.ToJSON Scope
+instance Aeson.ToJSON Scope where
+  toJSON Private = "private"
+  toJSON (Public Open) = "public open"
+  toJSON (Public Closed) = "public closed"
 
 data OpenOrClosed
   = Open
   | Closed
-  deriving (Show, Generic)
-
-instance Aeson.ToJSON OpenOrClosed
+  deriving (Show)
 
 instance Aeson.ToJSON Union where
   toJSON (OpenUnion u) =
