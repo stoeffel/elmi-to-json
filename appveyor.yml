@@ -1,0 +1,44 @@
+build: off
+
+before_test:
+# http://help.appveyor.com/discussions/problems/6312-curl-command-not-found
+- set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
+
+- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
+- 7z x stack.zip stack.exe
+
+clone_folder: "c:\\stack"
+environment:
+  matrix:
+  - win_runtime: win-x64
+    arch: x64
+    plat: win32
+  - win_runtime: win-x86
+    arch: ia32
+    plat: win32
+  global:
+    STACK_ROOT: "c:\\sr"
+    BINARY: elmi-to-json-$(PLATFORM).tar.gz
+
+test_script:
+- stack setup > nul
+# The ugly echo "" hack is to avoid complaints about 0 being an invalid file
+# descriptor
+- echo "" | stack --no-terminal test
+- stack build --ghc-options -O2
+- FOR /F "tokens=1 delims=" %%A in ('stack path --local-install-root') do SET STACK_BIN=%%A
+- tar zcvf $(BINARY) -C $(STACK_BIN)/bin elmi-to-json.exe
+
+artifacts:
+  - path: $(BINARY)
+    name: Releases
+
+deploy:
+  provider: GitHub
+  auth_token:
+    secure: "MlYtJPvxZuQlKMolBQxysZef5AiZapj8gOI8dPpEzkMxeQlQmL6/j/myMT6Zpkne"
+  artifact: $(BINARY)
+  draft: false
+  prerelease: false
+  on:
+    appveyor_repo_tag: true
