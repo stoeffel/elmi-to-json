@@ -1,0 +1,32 @@
+{
+  "name": "elmi-to-json",
+  "version": "0.19.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "install": "binwrap-install",
+    "prepare": "binwrap-prepare",
+    "test": "binwrap-test",
+    "prepublish": "npm test"
+  },
+  "files": [
+    "index.js",
+    "bin/elmi-to-json"
+  ],
+  "bin": {
+    "elmi-to-json": "bin/elmi-to-json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stoeffel/elmi-to-json.git"
+  },
+  "author": "",
+  "license": "BSD-3-Clause",
+  "bugs": {
+    "url": "https://github.com/stoeffel/elmi-to-json/issues"
+  },
+  "homepage": "https://github.com/stoeffel/elmi-to-json#readme",
+  "dependencies": {
+    "binwrap": "^0.2.0-rc1"
+  }
+}

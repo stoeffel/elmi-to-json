@@ -2,3 +2,5 @@
 elmi-to-json.cabal
 *~
 /tmp_test_workspace/
+/node_modules/
+/bin/
