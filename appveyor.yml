@@ -18,7 +18,6 @@ environment:
     plat: win32
   global:
     STACK_ROOT: "c:\\sr"
-    BINARY: elmi-to-json-$(PLATFORM).tar.gz
 
 test_script:
 - stack setup > nul
@@ -27,17 +26,18 @@ test_script:
 - echo "" | stack --no-terminal test
 - stack build --ghc-options -O2
 - FOR /F "tokens=1 delims=" %%A in ('stack path --local-install-root') do SET STACK_BIN=%%A
-- tar zcvf $(BINARY) -C $(STACK_BIN)/bin elmi-to-json.exe
+- echo elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz
+- tar zcvf elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz -C %STACK_BIN%/bin elmi-to-json.exe
 
 artifacts:
-  - path: $(BINARY)
+  - path: elmi-to-json-$(APPVEYOR_REPO_TAG_NAME)-$(plat)-$(arch).tar.gz
     name: Releases
 
 deploy:
   provider: GitHub
   auth_token:
-    secure: "MlYtJPvxZuQlKMolBQxysZef5AiZapj8gOI8dPpEzkMxeQlQmL6/j/myMT6Zpkne"
-  artifact: $(BINARY)
+    secure: TRjMVOGURUeTGTWXgKxKKFX/I6GD/4GLPsP5gIAt1usgeNGbVXelQPsYglmvfYpN
+  artifact: elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-$(plat)-$(arch).tar.gz
   draft: false
   prerelease: false
   on:
