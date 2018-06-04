@@ -25,18 +25,18 @@ test_script:
 - echo "" | stack --no-terminal test
 - stack build --ghc-options -O2
 - FOR /F "tokens=1 delims=" %%A in ('stack path --local-install-root') do SET STACK_BIN=%%A
-- echo elmi-to-json-%plat%-%arch%.tar.gz
-- tar zcvf elmi-to-json-%plat%-%arch%.tar.gz -C %STACK_BIN%/bin elmi-to-json.exe
+- echo elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz
+- tar zcvf elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz -C %STACK_BIN%/bin elmi-to-json.exe
 
 artifacts:
-  - path: elmi-to-json-$(plat)-$(arch).tar.gz
+  - path: elmi-to-json-$(APPVEYOR_REPO_TAG_NAME)-$(plat)-$(arch).tar.gz
     name: Releases
 
 deploy:
   provider: GitHub
   auth_token:
     secure: TRjMVOGURUeTGTWXgKxKKFX/I6GD/4GLPsP5gIAt1usgeNGbVXelQPsYglmvfYpN
-  artifact: elmi-to-json-$(plat)-$(arch).tar.gz
+  artifact: elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-$(plat)-$(arch).tar.gz
   draft: false
   prerelease: false
   on:
