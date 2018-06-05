@@ -1,0 +1,34 @@
+addons:
+  apt:
+    packages:
+    - libgmp-dev
+before_install:
+- sh script/install-stack.sh
+cache:
+  directories:
+  - "${HOME}/.local/bin"
+  - "${HOME}/.stack"
+  - ".stack-work"
+env:
+  global:
+  - CASHER_TIME_OUT=1000
+  - BUILD="elmi-to-json-${TRAVIS_TAG}-${TRAVIS_OS_NAME}.tar.gz"
+language: c
+os:
+- linux
+- osx
+sudo: false
+script:
+- stack setup
+- stack test
+- stack build --ghc-options -O2
+- tar zcvf "${BUILD}" -C "$(stack path --local-install-root)/bin" elmi-to-json
+deploy:
+  provider: releases
+  api_key:
+    secure: r+0ogbwGIbSw5UdUKU2vQgCXcx+RelPZL9PehiG7sNCtJ1kpwtCRM1sizse1kZt7716M1tYmqdPq/Pzo0HsF+OoI/dl1peQJrjYLE+Nvp4lkQstqM3/52WRkVuQ4dODCPbE8+jnHsZWVT0cGKG3AdHcg7tkP4s82wow4Spnja8ml7WxnLrtceJqYYC9TWpmSMf5PEakvYr3NL7dyfhgQjnxap9QjwFGNh9HZ51NNZkTgusIN4r54KVk2In/XIquHrzysyBbON6a0RhG3c6OVsjoDh9QII9RRg7BDKAMv3tcSdQz6/xDafgY8Zgcd1m5TIpIc313r7K0HL/mGiMuuxDvdmU96xZ6wa03AeKOxnGdzv1l7FSMQcwReV+XZjKmZOclBSCgCOzroRgRNKTW4QrPUVPhIZX/RhXEyCgGlNgfkcn2b3oxLahROO+gq3/GRIGoLXxi2XrV/Z1KXv1FSLi/wgyoHO44wWZNW68Nnf+C0hcEg2RAa2fpyIczOvSJ7gPKtlAOksBrTUuLEBMyvE4OVc2y6it7jhpLI7p8tTNgRfgkq2q9GBY3rpuPiBiZOUkx4sYlqVcfGEQtP1oCxWKJMGcbOoiN+aVVfasv4BxlyWT8xlCrKvhOmpEJEj6YrB7WLGdrOe0NNg0zuXsu/98FAPJFhCk+JIBk4vRx/W0k=
+  file: "${BUILD}"
+  skip_cleanup: true
+  on:
+    repo: stoeffel/elmi-to-json
+    tags: true
