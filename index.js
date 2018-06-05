@@ -13,9 +13,9 @@ var root =
 module.exports = binwrap({
   binaries: ["elmi-to-json"],
   urls: {
-    "darwin-x64": root + "-mac-x64.tgz",
-    "linux-x64": root + "-linux-x64.tgz",
-    "win32-x64": root + "-win-i386.zip",
-    "win32-ia32": root + "-win-i386.zip"
+    "darwin-x64": root + "-osx-tar.gz",
+    "linux-x64": root + "-linux.tar.gz",
+    "win32-x64": root + "-win32-x86.zip",
+    "win32-ia32": root + "-win32-i32.zip"
   }
 });

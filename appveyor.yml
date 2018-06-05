@@ -27,11 +27,10 @@ test_script:
 - echo "" | stack --no-terminal test
 - stack build --ghc-options -O2
 - FOR /F "tokens=1 delims=" %%A in ('stack path --local-install-root') do SET STACK_BIN=%%A
-- echo elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz
-- tar zcvf elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.tar.gz -C %STACK_BIN%/bin elmi-to-json.exe
+- 7z a elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-%plat%-%arch%.zip %STACK_BIN%/bin/elmi-to-json.exe
 
 artifacts:
-  - path: elmi-to-json-$(APPVEYOR_REPO_TAG_NAME)-$(plat)-$(arch).tar.gz
+  - path: elmi-to-json-$(APPVEYOR_REPO_TAG_NAME)-$(plat)-$(arch).zip
     name: Releases
 
 deploy:
