@@ -1,6 +1,6 @@
 {
   "name": "elmi-to-json",
-  "version": "0.19.0",
+  "version": "0.19.0-rc1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -20,7 +20,7 @@
     "type": "git",
     "url": "git+https://github.com/stoeffel/elmi-to-json.git"
   },
-  "author": "",
+  "author": "Christoph Hermann",
   "license": "BSD-3-Clause",
   "bugs": {
     "url": "https://github.com/stoeffel/elmi-to-json/issues"

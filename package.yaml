@@ -1,10 +1,10 @@
 name:                elmi-to-json
 version:             0.1.0.0
-github:              "githubuser/elmi-to-json"
+github:              "stoeffel/elmi-to-json"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2018 Author name here"
+author:              "Christoph Hermann"
+maintainer:          "schtoeffel@gmail.com"
+copyright:           "2018 Christoph Hermann"
 
 extra-source-files:
 - README.md
