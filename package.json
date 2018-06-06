@@ -27,6 +27,6 @@
   },
   "homepage": "https://github.com/stoeffel/elmi-to-json#readme",
   "dependencies": {
-    "binwrap": "^0.2.0-rc1"
+    "binwrap": "^0.2.0-rc2"
   }
 }

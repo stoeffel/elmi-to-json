@@ -11,6 +11,7 @@ var root =
   version;
 
 module.exports = binwrap({
+  dirname: __dirname,
   binaries: ["elmi-to-json"],
   urls: {
     "darwin-x64": root + "-osx.tar.gz",
