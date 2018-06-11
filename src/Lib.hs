@@ -9,6 +9,7 @@ import qualified Control.Concurrent.Async as Async
 import Control.Exception.Safe (SomeException, catchAny)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
+import Data.Maybe (catMaybes)
 import Data.Semigroup ((<>))
 import qualified Elm.Json
 import Elm.Json (ElmJson(..))
@@ -27,10 +28,10 @@ runUnsafe :: Args -> IO ()
 runUnsafe Args {infoFor, maybeOutput} = do
   elmRoot <- FE.findUp ("elm" <.> "json")
   elmJson@ElmJson {sourceDirecotries} <- Elm.Json.load elmRoot
-  modulePaths <- Elmi.for elmRoot elmJson infoFor
+  (forAll, modulePaths) <- Elmi.for elmRoot elmJson infoFor
   result <-
-    Aeson.encode <$>
-    Async.mapConcurrently (Info.for sourceDirecotries) modulePaths
+    Aeson.encode <$> catMaybes <$>
+    Async.mapConcurrently (Info.for forAll sourceDirecotries) modulePaths
   case maybeOutput of
     Just output -> BL.writeFile output result
     Nothing -> BL.putStr result

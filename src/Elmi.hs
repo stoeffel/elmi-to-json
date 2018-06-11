@@ -22,25 +22,32 @@ import qualified System.FilePath.Extra as FE
 toModuleName :: FilePath -> T.Text
 toModuleName = T.replace "-" "." . T.pack . F.dropExtension . F.takeFileName
 
-toModulePath :: [FilePath] -> FilePath -> IO FilePath
-toModulePath sourceDirecotries path =
+toModulePath :: Bool -> [FilePath] -> FilePath -> IO (Maybe FilePath)
+toModulePath dontFail sourceDirecotries path =
   case sourceDirecotries of
     dir:rest -> do
       exists <- Dir.doesFileExist (dir </> toFileName path)
       if exists
-        then return (dir </> toFileName path)
-        else toModulePath rest path
-    [] -> ES.throwM (ModuleNotFound path)
+        then return $ Just (dir </> toFileName path)
+        else toModulePath dontFail rest path
+    [] ->
+      if dontFail
+        then return Nothing
+        else ES.throwM (ModuleNotFound path)
   where
     toFileName =
       flip F.addExtension "elm" .
       T.unpack . T.replace "-" "/" . T.pack . F.dropExtension . F.takeFileName
 
-for :: FilePath -> ElmJson -> Subset FilePath -> IO [FilePath]
-for elmRoot elmJson@ElmJson {elmVersion} subset = do
+for :: FilePath -> ElmJson -> Subset FilePath -> IO (Bool, [FilePath])
+for elmRoot elmJson@ElmJson {elmVersion} subset =
   case subset of
-    All -> FE.findAll ".elmi" (elmRoot </> elmStuff elmVersion)
-    Subset modulePaths -> traverse (toElmiPath elmRoot elmJson) modulePaths
+    All -> do
+      files <- FE.findAll ".elmi" (elmRoot </> elmStuff elmVersion)
+      return (True, files)
+    Subset modulePaths -> do
+      files <- traverse (toElmiPath elmRoot elmJson) modulePaths
+      return (False, files)
 
 toElmiPath :: FilePath -> ElmJson -> FilePath -> IO FilePath
 toElmiPath elmRoot ElmJson {elmVersion, sourceDirecotries} modulePath = do
