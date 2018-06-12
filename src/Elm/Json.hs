@@ -23,7 +23,8 @@ data ElmJson = ElmJson
 instance Aeson.FromJSON ElmJson where
   parseJSON =
     Aeson.withObject "Coord" $ \v ->
-      ElmJson <$> v .:? "source-directories" .!= ["src"] <*> v .: "elm-version"
+      ElmJson <$> v .:? "source-directories" .!= ["src"] <*>
+      (T.takeWhile ((/=) ' ') <$> v .: "elm-version")
 
 load :: FilePath -> IO ElmJson
 load root = do
