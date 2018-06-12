@@ -3,7 +3,7 @@
 
 ## Preparation
 
-1. Bump version in package.yaml, package.json, and package-lock.json
+1. Bump version in package.json, and package-lock.json
 1. Create a tag for the new version. `git tag -s <version> -m <version>`
 1. Push the tag. `git push && git push origin <version>`
 1. Wait for [CI to successfully build the tag](https://travis-ci.org/stoeffel/elmi-to-json/builds), this will create a new github release.
