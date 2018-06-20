@@ -8,7 +8,7 @@ module Elm.Json
 import Control.Exception.Safe (Exception)
 import qualified Control.Exception.Safe as ES
 import qualified Data.Aeson as Aeson
-import Data.Aeson ((.:))
+import Data.Aeson ((.!=), (.:), (.:?))
 import qualified Data.ByteString.Lazy as BL
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
@@ -23,7 +23,8 @@ data ElmJson = ElmJson
 instance Aeson.FromJSON ElmJson where
   parseJSON =
     Aeson.withObject "Coord" $ \v ->
-      ElmJson <$> v .: "source-directories" <*> v .: "elm-version"
+      ElmJson <$> v .:? "source-directories" .!= ["src", "tests"] <*>
+      (T.takeWhile ((/=) ' ') <$> v .: "elm-version")
 
 load :: FilePath -> IO ElmJson
 load root = do
