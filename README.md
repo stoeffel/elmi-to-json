@@ -43,6 +43,14 @@ f a _ =
 ]
 ```
 
+## Usage
+
+```shell
+npm install -g elmi-to-json
+elm make src/Main.elm
+elmi-to-json
+```
+
 # TODO
 
 - [ ] setup travis for generating bins
