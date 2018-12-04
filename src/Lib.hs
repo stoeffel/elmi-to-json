@@ -13,7 +13,6 @@ import Data.Semigroup ((<>))
 import qualified Elm.Json
 import qualified Elmi
 import qualified Info
-import qualified Rainbow as R
 import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
 
@@ -34,6 +33,5 @@ runUnsafe Args {infoFor, maybeOutput} = do
 
 onError :: Args -> SomeException -> IO ()
 onError Args {infoFor} e =
-  mapM_
-    (R.putChunkLn . R.fore R.red . R.chunk)
+  mapM_ putStrLn
     ["elmi-to-json failed" <> " for:", show infoFor, "", show e, ""]
