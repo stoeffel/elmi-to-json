@@ -24,7 +24,7 @@ script:
 - |
   if [ "$TRAVIS_OS_NAME" = linux ]; then
     echo "Compiling static binary"
-    stack build --ghc-options -O2 --flag="elmi-to-json:static"
+    stack build --ghc-options "-O2 -fPIC" --flag="elmi-to-json:static"
   else
     echo "Compiling dynamic binary"
     stack build --ghc-options -O2
