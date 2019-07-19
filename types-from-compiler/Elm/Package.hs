@@ -11,7 +11,6 @@ import Data.Binary (Binary, get, put)
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import qualified Data.Utf8 as Utf8
-import qualified Elm.Version as V
 
 -- PACKGE NAMES
 data Name = Name
@@ -20,17 +19,10 @@ data Name = Name
   } deriving (Eq, Ord)
 
 type Author = Utf8.Utf8 AUTHOR
-
 type Project = Utf8.Utf8 PROJECT
 
 data AUTHOR
-
 data PROJECT
-
-data Package = Package
-  { _name :: !Name
-  , _version :: !V.Version
-  } deriving (Eq, Ord)
 
 toChars :: Name -> String
 toChars (Name author project) =
