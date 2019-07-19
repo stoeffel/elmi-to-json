@@ -13,10 +13,10 @@ import qualified Data.Aeson as Aeson
 import Data.Binary
 import GHC.Generics (Generic)
 
-import qualified AST.Module.Name as ModuleName
+import qualified Elm.ModuleName as ModuleName
 import qualified Data.Index as Index
 import qualified Data.Map as Map
-import qualified Elm.Name as N
+import Data.Name (Name)
 
 -- TYPES
 data Annotation =
@@ -24,25 +24,16 @@ data Annotation =
          Type
   deriving (Generic, Show)
 
-type FreeVars = Map.Map N.Name ()
+type FreeVars = Map.Map Name ()
 
 data Type
-  = TLambda Type
-            Type
-  | TVar N.Name
-  | TType ModuleName.Canonical
-          N.Name
-          [Type]
-  | TRecord (Map.Map N.Name FieldType)
-            (Maybe N.Name)
+  = TLambda Type Type
+  | TVar Name
+  | TType ModuleName.Canonical Name [Type]
+  | TRecord (Map.Map Name FieldType) (Maybe Name)
   | TUnit
-  | TTuple Type
-           Type
-           (Maybe Type)
-  | TAlias ModuleName.Canonical
-           N.Name
-           [(N.Name, Type)]
-           AliasType
+  | TTuple Type Type (Maybe Type)
+  | TAlias ModuleName.Canonical Name [(Name, Type)] AliasType
   deriving (Generic, Show)
 
 data AliasType
@@ -51,17 +42,15 @@ data AliasType
   deriving (Generic, Show)
 
 data FieldType =
-  FieldType {-# UNPACK #-}!Word16
-            Type
+  FieldType {-# UNPACK #-}!Word16 Type
   deriving (Show)
 
 data Alias =
-  Alias [N.Name]
-        Type
+  Alias [Name] Type
   deriving (Show)
 
 data Union = Union
-  { _u_vars :: [N.Name]
+  { _u_vars :: [Name]
   , _u_alts :: [Ctor]
   , _u_numAlts :: Int -- CACHE numAlts for exhaustiveness checking
   , _u_opts :: CtorOpts -- CACHE which optimizations are available
@@ -74,10 +63,7 @@ data CtorOpts
   deriving (Eq, Ord, Show)
 
 data Ctor =
-  Ctor N.Name
-       Index.ZeroBased
-       Int
-       [Type] -- CACHE length args
+  Ctor Name Index.ZeroBased Int [Type] -- CACHE length args
   deriving (Show)
 
 -- JSON
@@ -156,7 +142,7 @@ instance Aeson.ToJSON Union where
     Aeson.object
       ["vars" .= _u_vars, "ctors" .= (Map.fromList $ ctorPair <$> _u_alts)]
 
-ctorPair :: Ctor -> (N.Name, [Type])
+ctorPair :: Ctor -> (Name, [Type])
 ctorPair (Ctor name _ _ types) = (name, types)
 
 -- BINARY
