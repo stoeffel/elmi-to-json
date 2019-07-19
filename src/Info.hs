@@ -37,13 +37,16 @@ for Elmi.Paths {Elmi.interfacePath, Elmi.modulePath} = do
       , moduleName = Elmi.toModuleName interfacePath
       , interface = interface
       }
-    Left _ -> ES.throwM (DecodingElmiFailed interfacePath)
+    Left (_, err) -> ES.throwM (DecodingElmiFailed err interfacePath)
 
-newtype DecodingElmiFailed =
-  DecodingElmiFailed FilePath
+data DecodingElmiFailed =
+  DecodingElmiFailed String
+                     FilePath
   deriving (Typeable, Exception)
 
 instance Show DecodingElmiFailed where
-  show (DecodingElmiFailed path) =
+  show (DecodingElmiFailed err path) =
     "Couldn't decode " <> path <>
-    ". This file seems to be corrupted. Try to nuke `elm-stuff` and `elm make` again."
+    ". This file seems to be corrupted. Try to nuke `elm-stuff` and `elm make` again.\n" <>
+    "Error: \n" <>
+    err
