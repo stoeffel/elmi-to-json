@@ -5,89 +5,38 @@ module Elm.Package
   ( Name(..)
   ) where
 
-import Control.Monad (liftM, liftM2, liftM3)
+import Control.Monad (liftM2)
 import qualified Data.Aeson as Aeson
-import Data.Binary (Binary, get, getWord8, put, putWord8)
+import Data.Binary (Binary, get, put)
 import Data.Semigroup ((<>))
-import Data.Text (Text)
-import Data.Word (Word16)
-
-
+import qualified Data.Text as T
+import qualified Data.Utf8 as Utf8
 
 -- PACKGE NAMES
+data Name = Name
+  { _author :: !Author
+  , _project :: !Project
+  } deriving (Eq, Ord)
 
+type Author = Utf8.Utf8 AUTHOR
+type Project = Utf8.Utf8 PROJECT
 
-data Name =
-  Name
-    { _author :: !Text
-    , _project :: !Text
-    }
-    deriving (Eq, Ord, Show)
+data AUTHOR
+data PROJECT
 
+toChars :: Name -> String
+toChars (Name author project) =
+  Utf8.toChars author <> "/" <> Utf8.toChars project
 
-data Package =
-  Package
-    { _name :: !Name
-    , _version :: !Version
-    }
-    deriving (Eq, Ord)
-
-
-data Version =
-  Version
-    { _major :: {-# UNPACK #-} !Word16
-    , _minor :: {-# UNPACK #-} !Word16
-    , _patch :: {-# UNPACK #-} !Word16
-    }
-    deriving (Eq, Ord)
-
+instance Show Name where
+  show = toChars
 
 -- JSON
-
-
 instance Aeson.ToJSON Name where
-  toJSON (Name {_author, _project}) = Aeson.String (_author <> "/" <> _project)
-
-
+  toJSON = Aeson.String . T.pack . toChars
 
 -- BINARY
-
-
-instance Binary Name where
-  get =
-    liftM2 Name get get
-
-  put (Name author project) =
-    do  put author
-        put project
-
-
-instance Binary Package where
-  get =
-    liftM2 Package get get
-
-  put (Package name version) =
-    do  put name
-        put version
-
-
-instance Binary Version where
-  get =
-    do  word <- getWord8
-        if word == 0
-          then liftM3 Version get get get
-          else
-            do  minor <- liftM fromIntegral getWord8
-                patch <- liftM fromIntegral getWord8
-                return (Version (fromIntegral word) minor patch)
-
-  put (Version major minor patch) =
-    if major < 256 && minor < 256 && patch < 256 then
-      do  putWord8 (fromIntegral major)
-          putWord8 (fromIntegral minor)
-          putWord8 (fromIntegral patch)
-    else
-      do  putWord8 0
-          put major
-          put minor
-          put patch
+instance Binary Name -- PERF try storing as a Word16
+                                                     where
+  get = liftM2 Name Utf8.getUnder256 Utf8.getUnder256
+  put (Name a b) = Utf8.putUnder256 a >> Utf8.putUnder256 b

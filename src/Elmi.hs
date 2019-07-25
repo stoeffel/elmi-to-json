@@ -6,9 +6,14 @@ module Elmi
   , Paths(..)
   ) where
 
+import Control.Applicative ((<|>))
+import Control.Exception.Safe (Exception)
+import qualified Control.Exception.Safe as ES
 import Data.Maybe (catMaybes)
 import qualified Data.Maybe as M
+import Data.Semigroup ((<>))
 import qualified Data.Text as T
+import Data.Typeable (Typeable)
 import Elm.Json (ElmJson(..))
 import Subset (Subset(..))
 import qualified System.Directory as Dir
@@ -25,13 +30,43 @@ data Paths = Paths
   }
 
 for :: FilePath -> ElmJson -> Subset FilePath -> IO [Paths]
-for elmRoot elmJson@ElmJson {elmVersion, sourceDirecotries} subset =
+for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
+  elmStuffPath <- findElmStuffPath elmRoot elmJson
   case subset of
     All -> do
-      files <- FE.findAll ".elmi" (elmRoot </> elmStuff elmVersion)
+      files <- FE.findAll ".elmi" elmStuffPath
       catMaybes <$> traverse (withModulePath sourceDirecotries) files
     Subset modulePaths -> do
-      catMaybes <$> traverse (withElmiPath elmRoot elmJson) modulePaths
+      catMaybes <$>
+        traverse
+          (withElmiPath elmRoot elmStuffPath sourceDirecotries)
+          modulePaths
+
+findElmStuffPath :: FilePath -> ElmJson -> IO FilePath
+findElmStuffPath elmRoot ElmJson {elmVersion} = do
+  let elmStuff = "elm-stuff"
+  elmStuffDirs <- Dir.getDirectoryContents (elmRoot </> elmStuff)
+  let foundExact =
+        safeHead . filter (\path -> path == elmVersion) $
+        fmap T.pack elmStuffDirs
+  let foundPrefix =
+        safeHead . filter (\path -> elmVersion `T.isPrefixOf` path) $
+        fmap T.pack elmStuffDirs
+  case foundExact <|> foundPrefix of
+    Just found -> return $ elmRoot </> elmStuff </> (T.unpack found)
+    Nothing -> ES.throwM (ElmStuffNotFound elmVersion)
+
+safeHead :: [e] -> Maybe e
+safeHead [] = Nothing
+safeHead (x:_) = Just x
+
+newtype ElmStuffNotFound =
+  ElmStuffNotFound T.Text
+  deriving (Typeable, Exception)
+
+instance Show ElmStuffNotFound where
+  show (ElmStuffNotFound version) =
+    "Couldn't find elm-stuff for Elm version " <> T.unpack version <> "."
 
 withModulePath :: [FilePath] -> FilePath -> IO (Maybe Paths)
 withModulePath sourceDirecotries path =
@@ -50,8 +85,9 @@ withModulePath sourceDirecotries path =
       flip F.addExtension "elm" .
       T.unpack . T.replace "-" "/" . T.pack . F.dropExtension . F.takeFileName
 
-withElmiPath :: FilePath -> ElmJson -> FilePath -> IO (Maybe Paths)
-withElmiPath elmRoot ElmJson {elmVersion, sourceDirecotries} modulePath = do
+withElmiPath ::
+     FilePath -> FilePath -> [FilePath] -> FilePath -> IO (Maybe Paths)
+withElmiPath elmRoot elmStuffPath sourceDirecotries modulePath = do
   exists <- Dir.doesFileExist (modulePath)
   if exists
     then do
@@ -62,14 +98,10 @@ withElmiPath elmRoot ElmJson {elmVersion, sourceDirecotries} modulePath = do
       return $
         Just
           Paths
-          { interfacePath =
-              (elmRoot </> elmStuff elmVersion </> elmiName <.> "elmi")
+          { interfacePath = (elmStuffPath </> elmiName <.> "elmi")
           , modulePath = modulePath
           }
-  else return Nothing
-
-elmStuff :: T.Text -> FilePath
-elmStuff version = "elm-stuff" </> T.unpack version
+    else return Nothing
 
 removeSourceDir :: FilePath -> [FilePath] -> FilePath
 removeSourceDir file dirs =
