@@ -26,12 +26,14 @@ runUnsafe Args {infoFor, maybeOutput} = do
   elmRoot <- FE.findUp ("elm" <.> "json")
   elmJson <- Elm.Json.load elmRoot
   modulePaths <- Elmi.for elmRoot elmJson infoFor
-  result <- Aeson.encode <$> Async.mapConcurrently Info.for modulePaths
+  result <-
+    Aeson.encode . mconcat <$> Async.mapConcurrently Info.for modulePaths
   case maybeOutput of
     Just output -> BL.writeFile output result
     Nothing -> BL.putStr result
 
 onError :: Args -> SomeException -> IO ()
 onError Args {infoFor} e =
-  mapM_ putStrLn
+  mapM_
+    putStrLn
     ["elmi-to-json failed" <> " for:", show infoFor, "", show e, ""]

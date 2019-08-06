@@ -3,6 +3,7 @@
 module Elmi
   ( for
   , toModuleName
+  , InterfacePaths(..)
   , Paths(..)
   ) where
 
@@ -24,7 +25,11 @@ import qualified System.FilePath.Extra as FE
 toModuleName :: FilePath -> T.Text
 toModuleName = T.replace "-" "." . T.pack . F.dropExtension . F.takeFileName
 
-data Paths = Paths
+data Paths
+  = Interface InterfacePaths
+  | DependencyInterface FilePath
+
+data InterfacePaths = InterfacePaths
   { interfacePath :: FilePath
   , modulePath :: FilePath
   }
@@ -32,15 +37,18 @@ data Paths = Paths
 for :: FilePath -> ElmJson -> Subset FilePath -> IO [Paths]
 for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   elmStuffPath <- findElmStuffPath elmRoot elmJson
-  case subset of
-    All -> do
-      files <- FE.findAll ".elmi" elmStuffPath
-      catMaybes <$> traverse (withModulePath sourceDirecotries) files
-    Subset modulePaths -> do
-      catMaybes <$>
-        traverse
-          (withElmiPath elmRoot elmStuffPath sourceDirecotries)
-          modulePaths
+  paths <-
+    case subset of
+      All -> do
+        files <- FE.findAll ".elmi" elmStuffPath
+        catMaybes <$> traverse (withModulePath sourceDirecotries) files
+      Subset modulePaths -> do
+        catMaybes <$>
+          traverse
+            (withElmiPath elmRoot elmStuffPath sourceDirecotries)
+            modulePaths
+  return
+    (DependencyInterface (elmStuffPath </> "i" <.> "dat") : fmap Interface paths)
 
 findElmStuffPath :: FilePath -> ElmJson -> IO FilePath
 findElmStuffPath elmRoot ElmJson {elmVersion} = do
@@ -68,7 +76,7 @@ instance Show ElmStuffNotFound where
   show (ElmStuffNotFound version) =
     "Couldn't find elm-stuff for Elm version " <> T.unpack version <> "."
 
-withModulePath :: [FilePath] -> FilePath -> IO (Maybe Paths)
+withModulePath :: [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
 withModulePath sourceDirecotries path =
   case sourceDirecotries of
     dir:rest -> do
@@ -76,7 +84,7 @@ withModulePath sourceDirecotries path =
       if exists
         then return $
              Just
-               Paths
+               InterfacePaths
                {interfacePath = path, modulePath = (dir </> toFileName path)}
         else withModulePath rest path
     [] -> return Nothing
@@ -86,7 +94,7 @@ withModulePath sourceDirecotries path =
       T.unpack . T.replace "-" "/" . T.pack . F.dropExtension . F.takeFileName
 
 withElmiPath ::
-     FilePath -> FilePath -> [FilePath] -> FilePath -> IO (Maybe Paths)
+     FilePath -> FilePath -> [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
 withElmiPath elmRoot elmStuffPath sourceDirecotries modulePath = do
   exists <- Dir.doesFileExist (modulePath)
   if exists
@@ -97,7 +105,7 @@ withElmiPath elmRoot elmStuffPath sourceDirecotries modulePath = do
             FE.dasherize $ removeSourceDir relativeToRoot sourceDirecotries
       return $
         Just
-          Paths
+          InterfacePaths
           { interfacePath = (elmStuffPath </> elmiName <.> "elmi")
           , modulePath = modulePath
           }

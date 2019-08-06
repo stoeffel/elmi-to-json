@@ -43,6 +43,7 @@ library:
   - optparse-applicative == 0.14.*
   - safe-exceptions == 0.1.*
   - text == 1.2.*
+  - unordered-containers == 0.*
   ghc-options:
   - -Wall
   - -Werror
