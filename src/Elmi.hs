@@ -25,19 +25,20 @@ import qualified System.FilePath.Extra as FE
 toModuleName :: FilePath -> T.Text
 toModuleName = T.replace "-" "." . T.pack . F.dropExtension . F.takeFileName
 
-data Paths
-  = Interface InterfacePaths
-  | DependencyInterface FilePath
+data Paths = Paths
+  { interfaces :: [InterfacePaths]
+  , dependencyInterface :: FilePath
+  }
 
 data InterfacePaths = InterfacePaths
   { interfacePath :: FilePath
   , modulePath :: FilePath
   }
 
-for :: FilePath -> ElmJson -> Subset FilePath -> IO [Paths]
+for :: FilePath -> ElmJson -> Subset FilePath -> IO Paths
 for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   elmStuffPath <- findElmStuffPath elmRoot elmJson
-  paths <-
+  interfaces <-
     case subset of
       All -> do
         files <- FE.findAll ".elmi" elmStuffPath
@@ -47,8 +48,8 @@ for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
           traverse
             (withElmiPath elmRoot elmStuffPath sourceDirecotries)
             modulePaths
-  return
-    (DependencyInterface (elmStuffPath </> "i" <.> "dat") : fmap Interface paths)
+  let dependencyInterface = elmStuffPath </> "i" <.> "dat"
+  return Paths {dependencyInterface, interfaces}
 
 findElmStuffPath :: FilePath -> ElmJson -> IO FilePath
 findElmStuffPath elmRoot ElmJson {elmVersion} = do

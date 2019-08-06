@@ -4,6 +4,7 @@
 module Info
   ( Info(..)
   , for
+  , forDependencyInterface
   ) where
 
 import qualified AST.Canonical as Can
@@ -76,8 +77,8 @@ instance Aeson.ToJSON InternalInfo where
       , Aeson.toJSON interface
       ]
 
-for :: Elmi.Paths -> IO [Info]
-for (Elmi.DependencyInterface dependencyInterfacePath) = do
+forDependencyInterface :: FilePath -> IO [Info]
+forDependencyInterface dependencyInterfacePath = do
   result <- B.decodeFileOrFail dependencyInterfacePath
   case result of
     Right (interfaces) ->
@@ -90,7 +91,9 @@ for (Elmi.DependencyInterface dependencyInterfacePath) = do
              Elm.Interface.Public interface ->
                return $ PublicDependency module' interface)
     Left (_, err) -> ES.throwM (DecodingElmiFailed err dependencyInterfacePath)
-for (Elmi.Interface Elmi.InterfacePaths {Elmi.interfacePath, Elmi.modulePath}) = do
+
+for :: Elmi.InterfacePaths -> IO [Info]
+for Elmi.InterfacePaths {Elmi.interfacePath, Elmi.modulePath} = do
   result <- B.decodeFileOrFail interfacePath
   case result of
     Right interface ->
