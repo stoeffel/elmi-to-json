@@ -4,22 +4,17 @@ module Elm.Interface
   ( Interface(..)
   , DependencyInterface(..)
   , Binop(..)
-  , Interfaces
   ) where
-
-import Control.Monad (liftM, liftM3, liftM4, liftM5)
-import Data.Aeson ((.=))
-import Data.Binary
-import qualified Data.Map as Map
 
 import qualified AST.Canonical as Can
 import qualified AST.Utils.Binop as Binop
+import Control.Monad (liftM, liftM3, liftM4, liftM5)
+import Data.Aeson ((.=))
 import qualified Data.Aeson as Aeson
+import Data.Binary
+import qualified Data.Map as Map
 import qualified Data.Name as Name
-import qualified Elm.ModuleName as ModuleName
 import qualified Elm.Package as Pkg
-
-type Interfaces = Map.Map ModuleName.Canonical DependencyInterface
 
 -- DEPENDENCY INTERFACE
 data DependencyInterface

@@ -20,6 +20,7 @@ import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import qualified Data.Traversable as Traversable
 import Data.Typeable (Typeable)
+import qualified Elm.Details
 import Elm.Interface (Interface)
 import qualified Elm.Interface
 import qualified Elm.ModuleName as ModuleName
@@ -83,7 +84,7 @@ forDependencyInterface dependencyInterfacePath = do
   case result of
     Right (interfaces) ->
       Traversable.for
-        (Map.toList (interfaces :: Elm.Interface.Interfaces))
+        (Map.toList (interfaces :: Elm.Details.Interfaces))
         (\(module', i) ->
            case i of
              Elm.Interface.Private _ unions aliases ->
