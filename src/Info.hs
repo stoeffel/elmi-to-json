@@ -10,9 +10,9 @@ import qualified AST.Canonical as Can
 import Control.Exception.Safe (Exception)
 import qualified Control.Exception.Safe as ES
 import qualified Data.Aeson as Aeson
-import Data.Aeson (Value(Object), (.=))
+import Data.Aeson ((.=))
+import qualified Data.Aeson.Extra as Aeson
 import qualified Data.Binary as B
-import qualified Data.HashMap.Lazy as HML
 import qualified Data.Map as Map
 import qualified Data.Name as Name
 import Data.Semigroup ((<>))
@@ -26,9 +26,6 @@ import qualified Elmi
 import GHC.Generics (Generic)
 import System.FilePath (FilePath)
 
-mergeObjects :: [Value] -> Value
-mergeObjects = Object . HML.unions . map (\(Object x) -> x)
-
 data Info
   = PrivateDependency ModuleName.Canonical
                       (Map.Map Name.Name Can.Union)
@@ -40,7 +37,7 @@ data Info
 
 instance Aeson.ToJSON Info where
   toJSON (PrivateDependency moduleName unions aliases) =
-    mergeObjects
+    Aeson.mergeObjects
       [ Aeson.object
           [ "scope" .= ("private" :: String)
           , "type" .= ("dependency" :: String)
@@ -50,14 +47,14 @@ instance Aeson.ToJSON Info where
       , Aeson.toJSON moduleName
       ]
   toJSON (PublicDependency moduleName interface) =
-    mergeObjects
+    Aeson.mergeObjects
       [ Aeson.object
           ["scope" .= ("public" :: String), "type" .= ("dependency" :: String)]
       , Aeson.toJSON moduleName
       , Aeson.toJSON interface
       ]
   toJSON (Internal interface) =
-    mergeObjects
+    Aeson.mergeObjects
       [ Aeson.object
           ["scope" .= ("public" :: String), "type" .= ("internal" :: String)]
       , Aeson.toJSON interface
@@ -71,7 +68,7 @@ data InternalInfo = InternalInfo
 
 instance Aeson.ToJSON InternalInfo where
   toJSON InternalInfo {moduleName, modulePath, interface} =
-    mergeObjects
+    Aeson.mergeObjects
       [ Aeson.object
           [ "module" .= Aeson.toJSON moduleName
           , "path" .= Aeson.toJSON modulePath
