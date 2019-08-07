@@ -1,6 +1,3 @@
-{-# LANGUAGE DeriveAnyClass #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Info
   ( Dependency(..)
   , Internal(..)
@@ -11,24 +8,24 @@ module Info
   ) where
 
 import qualified AST.Canonical as Can
-import Control.Exception.Safe (Exception)
-import qualified Control.Exception.Safe as ES
 import qualified Data.Aeson as Aeson
 import Data.Aeson ((.=))
 import qualified Data.Aeson.Extra as Aeson
 import qualified Data.Binary as B
 import qualified Data.Map as Map
 import qualified Data.Name as Name
-import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import qualified Data.Traversable as Traversable
-import Data.Typeable (Typeable)
 import qualified Elm.Details
 import Elm.Interface (Interface)
 import qualified Elm.Interface
 import qualified Elm.ModuleName as ModuleName
 import qualified Elmi
+import qualified Error
+import Error (Error)
 import GHC.Generics (Generic)
+import qualified Reporting.Task as Task
+import Reporting.Task (Task)
 import System.FilePath (FilePath)
 
 data Dependency
@@ -85,11 +82,12 @@ instance Aeson.ToJSON Details where
     Aeson.mergeObjects
       [Aeson.object ["type" .= ("details" :: String)], Aeson.toJSON details]
 
-forDependencies :: FilePath -> IO [Dependency]
+forDependencies :: FilePath -> Task Error [Dependency]
 forDependencies dependencyInterfacePath = do
-  result <- B.decodeFileOrFail dependencyInterfacePath
+  result <- Task.io $ B.decodeFileOrFail dependencyInterfacePath
   case result of
-    Left (_, err) -> ES.throwM (DecodingElmiFailed err dependencyInterfacePath)
+    Left (_, err) ->
+      Task.throw (Error.DecodingElmiFailed err dependencyInterfacePath)
     Right (interfaces) ->
       Traversable.for
         (Map.toList (interfaces :: Elm.Details.Interfaces))
@@ -100,18 +98,18 @@ forDependencies dependencyInterfacePath = do
              Elm.Interface.Public interface ->
                return $ PublicDependency module' interface)
 
-forDetails :: FilePath -> IO Details
+forDetails :: FilePath -> Task Error Details
 forDetails detailsPath = do
-  result <- B.decodeFileOrFail detailsPath
+  result <- Task.io $ B.decodeFileOrFail detailsPath
   case result of
-    Left (_, err) -> ES.throwM (DecodingElmiFailed err detailsPath)
+    Left (_, err) -> Task.throw (Error.DecodingElmiFailed err detailsPath)
     Right details -> return (Details details)
 
-forInternal :: Elmi.InterfacePaths -> IO Internal
+forInternal :: Elmi.InterfacePaths -> Task Error Internal
 forInternal Elmi.InterfacePaths {Elmi.interfacePath, Elmi.modulePath} = do
-  result <- B.decodeFileOrFail interfacePath
+  result <- Task.io $ B.decodeFileOrFail interfacePath
   case result of
-    Left (_, err) -> ES.throwM (DecodingElmiFailed err interfacePath)
+    Left (_, err) -> Task.throw (Error.DecodingElmiFailed err interfacePath)
     Right interface ->
       return
         Internal
@@ -119,15 +117,3 @@ forInternal Elmi.InterfacePaths {Elmi.interfacePath, Elmi.modulePath} = do
         , moduleName = Elmi.toModuleName interfacePath
         , interface = interface
         }
-
-data DecodingElmiFailed =
-  DecodingElmiFailed String
-                     FilePath
-  deriving (Typeable, Exception)
-
-instance Show DecodingElmiFailed where
-  show (DecodingElmiFailed err path) =
-    "Couldn't decode " <> path <>
-    ". This file seems to be corrupted. Try to nuke `elm-stuff` and `elm make` again.\n" <>
-    "Error: \n" <>
-    err
