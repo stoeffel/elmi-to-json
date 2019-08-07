@@ -13,7 +13,6 @@ import qualified Elm.Json
 import qualified Elmi
 import GHC.Generics (Generic)
 import qualified Info
-import Info (Info)
 import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
 
@@ -23,8 +22,9 @@ run = do
   runUnsafe args `catchAny` onError args
 
 data Result = Result
-  { dependencyInterfaces :: [Info]
-  , interfaces :: [Info]
+  { dependencies :: [Info.Dependency]
+  , details :: Info.Details
+  , internals :: [Info.Internal]
   } deriving (Generic)
 
 instance Aeson.ToJSON Result
@@ -33,12 +33,14 @@ runUnsafe :: Args -> IO ()
 runUnsafe Args {infoFor, maybeOutput} = do
   elmRoot <- FE.findUp ("elm" <.> "json")
   elmJson <- Elm.Json.load elmRoot
-  Elmi.Paths {Elmi.dependencyInterface, Elmi.interfaces} <-
-    Elmi.for elmRoot elmJson infoFor
-  interfaces' <- mconcat <$> Async.mapConcurrently Info.for interfaces
-  dependencyInterfaces <- Info.forDependencyInterface dependencyInterface
-  let result =
-        Aeson.encode Result {dependencyInterfaces, interfaces = interfaces'}
+  Elmi.Paths { Elmi.dependencyInterfacePath
+             , Elmi.interfacePaths
+             , Elmi.detailPaths
+             } <- Elmi.for elmRoot elmJson infoFor
+  internals <- Async.mapConcurrently Info.forInternal interfacePaths
+  dependencies <- Info.forDependencies dependencyInterfacePath
+  details <- Info.forDetails detailPaths
+  let result = Aeson.encode Result {dependencies, internals, details}
   case maybeOutput of
     Just output -> BL.writeFile output result
     Nothing -> BL.putStr result

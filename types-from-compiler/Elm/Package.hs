@@ -7,6 +7,7 @@ module Elm.Package
 
 import Control.Monad (liftM2)
 import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Encoding as Encoding
 import Data.Binary (Binary, get, put)
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
@@ -19,9 +20,11 @@ data Name = Name
   } deriving (Eq, Ord)
 
 type Author = Utf8.Utf8 AUTHOR
+
 type Project = Utf8.Utf8 PROJECT
 
 data AUTHOR
+
 data PROJECT
 
 toChars :: Name -> String
@@ -34,6 +37,10 @@ instance Show Name where
 -- JSON
 instance Aeson.ToJSON Name where
   toJSON = Aeson.String . T.pack . toChars
+
+instance Aeson.ToJSONKey Name where
+  toJSONKey =
+    Aeson.ToJSONKeyText (T.pack . toChars) (Encoding.text . T.pack . toChars)
 
 -- BINARY
 instance Binary Name -- PERF try storing as a Word16

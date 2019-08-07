@@ -6,6 +6,7 @@ module Data.NonEmptyList
   ) where
 
 import Control.Monad (liftM2)
+import qualified Data.Aeson as Aeson
 import Data.Binary (Binary, get, put)
 import qualified Data.List as List
 
@@ -13,6 +14,9 @@ import qualified Data.List as List
 data List a =
   List a
        [a]
+
+instance Aeson.ToJSON a => Aeson.ToJSON (List a) where
+  toJSON = Aeson.toJSON . toList
 
 singleton :: a -> List a
 singleton a = List a []
