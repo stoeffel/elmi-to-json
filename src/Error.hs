@@ -1,14 +1,17 @@
+{-# LANGUAGE DeriveAnyClass #-}
 module Error
   ( Error(..)
   ) where
 
 import qualified Data.Text as T
+import qualified Control.Exception as Exception
 
 data Error
   = DecodingElmJsonFailed FilePath
   | ElmStuffNotFound T.Text
   | DecodingElmiFailed String
                        FilePath
+  deriving (Exception.Exception)
 
 instance Show Error where
   show err =

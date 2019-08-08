@@ -45,7 +45,7 @@ task infoFor = do
              , Elmi.interfacePaths
              , Elmi.detailPaths
              } <- Elmi.for elmRoot elmJson infoFor
-  internals <- traverse Info.forInternal interfacePaths
+  internals <- Task.mapConcurrently Info.forInternal interfacePaths
   dependencies <- Info.forDependencies dependencyInterfacePath
   details <- Info.forDetails detailPaths
   return $ Aeson.encode Result {dependencies, internals, details}
