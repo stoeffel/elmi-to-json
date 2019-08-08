@@ -2,11 +2,9 @@ module Lib
   ( run
   ) where
 
-import Args (Args(..))
 import qualified Args
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
-import Data.Semigroup ((<>))
 import qualified Elm.Json
 import qualified Elmi
 import Error (Error)
@@ -20,13 +18,14 @@ import qualified System.FilePath.Extra as FE
 
 run :: IO ()
 run = do
-  Args {infoFor, maybeOutput} <- Args.parse
+  Args.Args {Args.infoFor, Args.maybeOutput} <- Args.parse
   result <- Task.run (task infoFor)
   case result of
-    Right val ->
+    Right val -> do
+      let json = Aeson.encode val
       case maybeOutput of
-        Just output -> BL.writeFile output val
-        Nothing -> BL.putStr val
+        Just output -> BL.writeFile output json
+        Nothing -> BL.putStr json
     Left err -> onError infoFor err
 
 data Result = Result
@@ -37,7 +36,7 @@ data Result = Result
 
 instance Aeson.ToJSON Result
 
-task :: Subset FilePath -> Task Error BL.ByteString
+task :: Subset FilePath -> Task Error Result
 task infoFor = do
   elmRoot <- Task.io $ FE.findUp ("elm" <.> "json")
   elmJson <- Elm.Json.load elmRoot
@@ -48,7 +47,7 @@ task infoFor = do
   internals <- Task.mapConcurrently Info.forInternal interfacePaths
   dependencies <- Info.forDependencies dependencyInterfacePath
   details <- Info.forDetails detailPaths
-  return $ Aeson.encode Result {dependencies, internals, details}
+  return Result {dependencies, internals, details}
 
 onError :: Subset FilePath -> Error -> IO ()
 onError infoFor e =

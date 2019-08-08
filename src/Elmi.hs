@@ -6,6 +6,7 @@ module Elmi
   ) where
 
 import Control.Applicative ((<|>))
+import Data.Foldable (find)
 import Data.Maybe (catMaybes)
 import qualified Data.Maybe as M
 import qualified Data.Text as T
@@ -37,67 +38,53 @@ data InterfacePaths = InterfacePaths
 for :: FilePath -> ElmJson -> Subset FilePath -> Task Error Paths
 for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   elmStuffPath <- findElmStuffPath elmRoot elmJson
-  interfacePaths <-
-    case subset of
-      All -> do
-        files <- Task.io $ FE.findAll ".elmi" elmStuffPath
-        catMaybes <$> traverse (withModulePath sourceDirecotries) files
-      Subset modulePaths -> do
-        catMaybes <$>
-          traverse
-            (withElmiPath elmRoot elmStuffPath sourceDirecotries)
-            modulePaths
   let dependencyInterfacePath = elmStuffPath </> "i" <.> "dat"
   let detailPaths = elmStuffPath </> "d" <.> "dat"
+  interfacePaths <-
+    Task.io $
+    catMaybes <$>
+    case subset of
+      All -> do
+        files <- FE.findAll ".elmi" elmStuffPath
+        traverse (withModulePath sourceDirecotries) files
+      Subset modulePaths -> do
+        traverse
+          (withElmiPath elmRoot elmStuffPath sourceDirecotries)
+          modulePaths
   return Paths {detailPaths, dependencyInterfacePath, interfacePaths}
 
 findElmStuffPath :: FilePath -> ElmJson -> Task Error FilePath
 findElmStuffPath elmRoot ElmJson {elmVersion} = do
-  let elmStuff = "elm-stuff"
-  elmStuffDirs <- Task.io $ Dir.getDirectoryContents (elmRoot </> elmStuff)
-  let foundExact =
-        safeHead . filter (\path -> path == elmVersion) $
-        fmap T.pack elmStuffDirs
-  let foundPrefix =
-        safeHead . filter (\path -> elmVersion `T.isPrefixOf` path) $
-        fmap T.pack elmStuffDirs
+  let elmStuff = elmRoot </> "elm-stuff"
+  elmStuffDirs <- Task.io $ Dir.getDirectoryContents (elmStuff)
+  let foundExact = find ((==) elmVersion . T.pack) elmStuffDirs
+  let foundPrefix = find (T.isPrefixOf elmVersion . T.pack) elmStuffDirs
   case foundExact <|> foundPrefix of
-    Just found -> return $ elmRoot </> elmStuff </> (T.unpack found)
+    Just found -> return (elmStuff </> found)
     Nothing -> Task.throw (Error.ElmStuffNotFound elmVersion)
 
-safeHead :: [e] -> Maybe e
-safeHead [] = Nothing
-safeHead (x:_) = Just x
-
-withModulePath :: [FilePath] -> FilePath -> Task a (Maybe InterfacePaths)
-withModulePath sourceDirecotries path =
-  case sourceDirecotries of
-    dir:rest -> do
-      exists <- Task.io $ Dir.doesFileExist (dir </> toFileName path)
-      if exists
-        then return $
-             Just
-               InterfacePaths
-               {interfacePath = path, modulePath = (dir </> toFileName path)}
-        else withModulePath rest path
-    [] -> return Nothing
+withModulePath :: [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
+withModulePath [] _ = return Nothing
+withModulePath (dir:rest) path = do
+  exists <- Dir.doesFileExist (dir </> toFileName path)
+  if exists
+    then return $
+         Just
+           InterfacePaths
+           {interfacePath = path, modulePath = (dir </> toFileName path)}
+    else withModulePath rest path
   where
     toFileName =
       flip F.addExtension "elm" .
       T.unpack . T.replace "-" "/" . T.pack . F.dropExtension . F.takeFileName
 
 withElmiPath ::
-     FilePath
-  -> FilePath
-  -> [FilePath]
-  -> FilePath
-  -> Task a (Maybe InterfacePaths)
+     FilePath -> FilePath -> [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
 withElmiPath elmRoot elmStuffPath sourceDirecotries modulePath = do
-  exists <- Task.io $ Dir.doesFileExist (modulePath)
+  exists <- Dir.doesFileExist modulePath
   if exists
     then do
       relativeToRoot <-
-        Task.io $
         F.makeRelative elmRoot . F.normalise <$> Dir.makeAbsolute modulePath
       let elmiName =
             FE.dasherize $ removeSourceDir relativeToRoot sourceDirecotries
