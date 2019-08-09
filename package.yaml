@@ -33,7 +33,6 @@ library:
   - types-from-compiler
   dependencies:
   - aeson == 1.4.*
-  - async == 2.2.*
   - binary == 0.8.*
   - bytestring == 0.10.*
   - containers == 0.*
@@ -43,6 +42,7 @@ library:
   - optparse-applicative == 0.14.*
   - text == 1.2.*
   - unordered-containers == 0.*
+  - unliftio == 0.2.*
   ghc-options:
   - -Wall
   - -Werror

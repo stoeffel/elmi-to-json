@@ -4,7 +4,6 @@ module Reporting.Task
   , run
   , throw
   , mapError
-  , mapConcurrently
   --
   , io
   , mio
@@ -12,8 +11,6 @@ module Reporting.Task
   )
   where
 
-import qualified Control.Exception as Exception
-import qualified Control.Concurrent.Async as Async
 
 -- TASKS
 
@@ -29,7 +26,6 @@ run :: Task x a -> IO (Either x a)
 run (Task task) =
   task (return . Right) (return . Left)
 
-
 throw :: x -> Task x a
 throw x =
   Task $ \_ err -> err x
@@ -39,20 +35,6 @@ mapError :: (x -> y) -> Task x a -> Task y a
 mapError func (Task task) =
   Task $ \ok err ->
     task ok (err . func)
-
-
-mapConcurrently :: (Exception.Exception err, Traversable t ) => (a -> Task err b) -> t a -> Task err (t b)
-mapConcurrently f =
-  eio id .
-    Exception.tryJust Exception.fromException .
-    Async.mapConcurrently (throwToStopOtherThreads . run . f)
-  where
-    throwToStopOtherThreads :: Exception.Exception err => IO (Either err b) -> IO b
-    throwToStopOtherThreads ioEither = do
-      result <- ioEither
-      case result of
-        Left err -> Exception.throw err
-        Right val -> pure val
 
 
 -- IO

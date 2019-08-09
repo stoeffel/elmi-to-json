@@ -15,6 +15,7 @@ import Reporting.Task (Task)
 import Subset (Subset)
 import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
+import qualified UnliftIO
 
 run :: IO ()
 run = do
@@ -26,7 +27,8 @@ run = do
       case maybeOutput of
         Just output -> BL.writeFile output json
         Nothing -> BL.putStr json
-    Left err -> onError infoFor err
+    Left err -> do
+      onError infoFor err
 
 data Result = Result
   { dependencies :: [Info.Dependency]
@@ -44,10 +46,14 @@ task infoFor = do
              , Elmi.interfacePaths
              , Elmi.detailPaths
              } <- Elmi.for elmRoot elmJson infoFor
-  internals <- Task.mapConcurrently Info.forInternal interfacePaths
+  internals <- mapConcurrently Info.forInternal interfacePaths
   dependencies <- Info.forDependencies dependencyInterfacePath
   details <- Info.forDetails detailPaths
   return Result {dependencies, internals, details}
+
+mapConcurrently :: (Traversable t, UnliftIO.Exception err) => (a -> Task err b) -> t a -> Task err (t b)
+mapConcurrently f  =
+    Task.eio id . UnliftIO.try . UnliftIO.mapConcurrently ( UnliftIO.fromEitherM . Task.run . f)
 
 onError :: Subset FilePath -> Error -> IO ()
 onError infoFor e =
