@@ -8,11 +8,9 @@ module Args
 import Control.Applicative (many, optional)
 import Data.Semigroup ((<>))
 import qualified Options.Applicative as A
-import Subset (Subset)
-import qualified Subset
 
 data Args = Args
-  { infoFor :: Subset FilePath
+  { infoFor :: [FilePath]
   , maybeOutput :: Maybe FilePath
   }
 
@@ -26,7 +24,7 @@ parse =
 
 parser :: A.Parser Args
 parser = do
-  modulePaths <-
+  infoFor <-
     many $
     A.argument
       A.str
@@ -35,5 +33,4 @@ parser = do
     optional $
     A.strOption
       (A.long "output" <> A.short 'o' <> A.help "Output info to a file.")
-  return
-    Args {infoFor = Subset.allIfEmpty modulePaths, maybeOutput = maybeOutput}
+  return Args {infoFor, maybeOutput}

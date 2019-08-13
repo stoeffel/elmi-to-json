@@ -15,7 +15,6 @@ import qualified Error
 import Error (Error)
 import qualified Reporting.Task as Task
 import Reporting.Task (Task)
-import Subset (Subset(..))
 import qualified System.Directory as Dir
 import System.FilePath (FilePath, (<.>), (</>))
 import qualified System.FilePath as F
@@ -35,7 +34,7 @@ data InterfacePaths = InterfacePaths
   , modulePath :: FilePath
   }
 
-for :: FilePath -> ElmJson -> Subset FilePath -> Task Error Paths
+for :: FilePath -> ElmJson -> [FilePath] -> Task Error Paths
 for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   elmStuffPath <- findElmStuffPath elmRoot elmJson
   let dependencyInterfacePath = elmStuffPath </> "i" <.> "dat"
@@ -43,10 +42,10 @@ for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   interfacePaths <-
     catMaybes <$>
     case subset of
-      All -> do
+      [] -> do
         files <- FE.findAll (Just ".elmi") elmStuffPath
         Task.io $ traverse (withModulePath sourceDirecotries) files
-      Subset modulePaths -> do
+      modulePaths -> do
         Task.io $
           traverse
             (withElmiPath elmRoot elmStuffPath sourceDirecotries)
