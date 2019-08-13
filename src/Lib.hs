@@ -1,5 +1,5 @@
 module Lib
-  ( run
+  ( main
   ) where
 
 import qualified Args
@@ -17,10 +17,10 @@ import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
 import qualified UnliftIO
 
-run :: IO ()
-run = do
+main :: IO ()
+main = do
   Args.Args {Args.infoFor, Args.maybeOutput} <- Args.parse
-  result <- Task.run (task infoFor)
+  result <- Task.run (run infoFor)
   case result of
     Right val -> do
       let json = Aeson.encode val
@@ -38,8 +38,8 @@ data Result = Result
 
 instance Aeson.ToJSON Result
 
-task :: Subset FilePath -> Task Error Result
-task infoFor = do
+run :: Subset FilePath -> Task Error Result
+run infoFor = do
   elmRoot <- Task.io $ FE.findUp ("elm" <.> "json")
   elmJson <- Elm.Json.load elmRoot
   Elmi.Paths { Elmi.dependencyInterfacePath
@@ -51,9 +51,14 @@ task infoFor = do
   details <- Info.forDetails detailPaths
   return Result {dependencies, internals, details}
 
-mapConcurrently :: (Traversable t, UnliftIO.Exception err) => (a -> Task err b) -> t a -> Task err (t b)
-mapConcurrently f  =
-    Task.eio id . UnliftIO.try . UnliftIO.mapConcurrently ( UnliftIO.fromEitherM . Task.run . f)
+mapConcurrently ::
+     (Traversable t, UnliftIO.Exception err)
+  => (a -> Task err b)
+  -> t a
+  -> Task err (t b)
+mapConcurrently f =
+  Task.eio id .
+  UnliftIO.try . UnliftIO.mapConcurrently (UnliftIO.fromEitherM . Task.run . f)
 
 onError :: Subset FilePath -> Error -> IO ()
 onError infoFor e =

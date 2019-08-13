@@ -41,22 +41,22 @@ for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   let dependencyInterfacePath = elmStuffPath </> "i" <.> "dat"
   let detailPaths = elmStuffPath </> "d" <.> "dat"
   interfacePaths <-
-    Task.io $
     catMaybes <$>
     case subset of
       All -> do
-        files <- FE.findAll ".elmi" elmStuffPath
-        traverse (withModulePath sourceDirecotries) files
+        files <- FE.findAll (Just ".elmi") elmStuffPath
+        Task.io $ traverse (withModulePath sourceDirecotries) files
       Subset modulePaths -> do
-        traverse
-          (withElmiPath elmRoot elmStuffPath sourceDirecotries)
-          modulePaths
+        Task.io $
+          traverse
+            (withElmiPath elmRoot elmStuffPath sourceDirecotries)
+            modulePaths
   return Paths {detailPaths, dependencyInterfacePath, interfacePaths}
 
 findElmStuffPath :: FilePath -> ElmJson -> Task Error FilePath
 findElmStuffPath elmRoot ElmJson {elmVersion} = do
   let elmStuff = elmRoot </> "elm-stuff"
-  elmStuffDirs <- Task.io $ Dir.getDirectoryContents (elmStuff)
+  elmStuffDirs <- FE.findAll Nothing elmStuff
   let foundExact = find ((==) elmVersion . T.pack) elmStuffDirs
   let foundPrefix = find (T.isPrefixOf elmVersion . T.pack) elmStuffDirs
   case foundExact <|> foundPrefix of
@@ -65,14 +65,12 @@ findElmStuffPath elmRoot ElmJson {elmVersion} = do
 
 withModulePath :: [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
 withModulePath [] _ = return Nothing
-withModulePath (dir:rest) path = do
-  exists <- Dir.doesFileExist (dir </> toFileName path)
+withModulePath (dir:rest) interfacePath = do
+  let modulePath = dir </> toFileName interfacePath
+  exists <- Dir.doesFileExist modulePath
   if exists
-    then return $
-         Just
-           InterfacePaths
-           {interfacePath = path, modulePath = (dir </> toFileName path)}
-    else withModulePath rest path
+    then return $ Just InterfacePaths {interfacePath, modulePath}
+    else withModulePath rest interfacePath
   where
     toFileName =
       flip F.addExtension "elm" .
@@ -88,12 +86,8 @@ withElmiPath elmRoot elmStuffPath sourceDirecotries modulePath = do
         F.makeRelative elmRoot . F.normalise <$> Dir.makeAbsolute modulePath
       let elmiName =
             FE.dasherize $ removeSourceDir relativeToRoot sourceDirecotries
-      return $
-        Just
-          InterfacePaths
-          { interfacePath = (elmStuffPath </> elmiName <.> "elmi")
-          , modulePath = modulePath
-          }
+      let interfacePath = elmStuffPath </> elmiName <.> "elmi"
+      return $ Just InterfacePaths {interfacePath, modulePath}
     else return Nothing
 
 removeSourceDir :: FilePath -> [FilePath] -> FilePath

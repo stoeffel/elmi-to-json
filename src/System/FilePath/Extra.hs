@@ -7,16 +7,27 @@ module System.FilePath.Extra
 
 import qualified Data.List as L
 import qualified Data.Text as T
+import Error (Error)
+import qualified Error
+import qualified Reporting.Task as Task
+import Reporting.Task (Task)
 import qualified System.Directory as Dir
 import System.FilePath (FilePath, (</>))
 import qualified System.FilePath as F
 
-findAll :: T.Text -> FilePath -> IO [FilePath]
-findAll extension dir = do
-  contents <- Dir.getDirectoryContents dir
-  return $
-    F.combine dir <$>
-    filter ((==) (T.unpack extension) . F.takeExtension) contents
+findAll :: Maybe T.Text -> FilePath -> Task Error [FilePath]
+findAll maybeExtension dir = do
+  exists <- Task.io (Dir.doesDirectoryExist dir)
+  if exists
+    then do
+      contents <- Task.io (Dir.getDirectoryContents dir)
+      case maybeExtension of
+        Nothing -> return contents
+        Just extension ->
+          return $
+          F.combine dir <$>
+          filter ((==) (T.unpack extension) . F.takeExtension) contents
+    else Task.throw (Error.DirectoryDoesntExist dir)
 
 findUp :: FilePath -> IO FilePath
 findUp needle = do

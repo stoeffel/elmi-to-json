@@ -1,16 +1,18 @@
 {-# LANGUAGE DeriveAnyClass #-}
+
 module Error
   ( Error(..)
   ) where
 
-import qualified Data.Text as T
 import qualified Control.Exception as Exception
+import qualified Data.Text as T
 
 data Error
   = DecodingElmJsonFailed FilePath
   | ElmStuffNotFound T.Text
   | DecodingElmiFailed String
                        FilePath
+  | DirectoryDoesntExist FilePath
   deriving (Exception.Exception)
 
 instance Show Error where
@@ -24,3 +26,4 @@ instance Show Error where
         ". This file seems to be corrupted. Try to nuke `elm-stuff` and `elm make` again.\n" <>
         "Error: \n" <>
         msg
+      DirectoryDoesntExist path -> "Couldn't find " <> path <> "."
