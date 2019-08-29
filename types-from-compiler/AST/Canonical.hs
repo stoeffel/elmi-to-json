@@ -5,6 +5,7 @@ module AST.Canonical
   ( Annotation(..)
   , Alias(..)
   , Union(..)
+  , CtorOpts
   ) where
 
 import Control.Monad (liftM, liftM2, liftM3, liftM4, replicateM)
@@ -13,10 +14,10 @@ import qualified Data.Aeson as Aeson
 import Data.Binary
 import GHC.Generics (Generic)
 
-import qualified Elm.ModuleName as ModuleName
 import qualified Data.Index as Index
 import qualified Data.Map as Map
 import Data.Name (Name)
+import qualified Elm.ModuleName as ModuleName
 
 -- TYPES
 data Annotation =
@@ -27,13 +28,22 @@ data Annotation =
 type FreeVars = Map.Map Name ()
 
 data Type
-  = TLambda Type Type
+  = TLambda Type
+            Type
   | TVar Name
-  | TType ModuleName.Canonical Name [Type]
-  | TRecord (Map.Map Name FieldType) (Maybe Name)
+  | TType ModuleName.Canonical
+          Name
+          [Type]
+  | TRecord (Map.Map Name FieldType)
+            (Maybe Name)
   | TUnit
-  | TTuple Type Type (Maybe Type)
-  | TAlias ModuleName.Canonical Name [(Name, Type)] AliasType
+  | TTuple Type
+           Type
+           (Maybe Type)
+  | TAlias ModuleName.Canonical
+           Name
+           [(Name, Type)]
+           AliasType
   deriving (Generic, Show)
 
 data AliasType
@@ -42,11 +52,13 @@ data AliasType
   deriving (Generic, Show)
 
 data FieldType =
-  FieldType {-# UNPACK #-}!Word16 Type
+  FieldType {-# UNPACK #-}!Word16
+            Type
   deriving (Show)
 
 data Alias =
-  Alias [Name] Type
+  Alias [Name]
+        Type
   deriving (Show)
 
 data Union = Union
@@ -63,7 +75,10 @@ data CtorOpts
   deriving (Eq, Ord, Show)
 
 data Ctor =
-  Ctor Name Index.ZeroBased Int [Type] -- CACHE length args
+  Ctor Name
+       Index.ZeroBased
+       Int
+       [Type] -- CACHE length args
   deriving (Show)
 
 -- JSON

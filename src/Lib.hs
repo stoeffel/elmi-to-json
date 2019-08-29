@@ -1,37 +1,55 @@
 module Lib
-  ( run
+  ( main
   ) where
 
-import Args (Args(..))
 import qualified Args
-
-import qualified Control.Concurrent.Async as Async
-import Control.Exception.Safe (SomeException, catchAny)
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Lazy as BL
-import Data.Semigroup ((<>))
 import qualified Elm.Json
 import qualified Elmi
+import Error (Error)
+import GHC.Generics (Generic)
 import qualified Info
+import qualified Reporting.Task as Task
+import Reporting.Task (Task)
+import qualified Reporting.Task.Async as Async
 import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
 
-run :: IO ()
-run = do
-  args <- Args.parse
-  runUnsafe args `catchAny` onError args
+main :: IO ()
+main = do
+  Args.Args {Args.infoFor, Args.maybeOutput} <- Args.parse
+  result <- Task.run (run infoFor)
+  case result of
+    Left err -> onError infoFor err
+    Right val -> do
+      let json = Aeson.encode val
+      case maybeOutput of
+        Just output -> BL.writeFile output json
+        Nothing -> BL.putStr json
 
-runUnsafe :: Args -> IO ()
-runUnsafe Args {infoFor, maybeOutput} = do
-  elmRoot <- FE.findUp ("elm" <.> "json")
+data Result = Result
+  { dependencies :: [Info.Dependency]
+  , details :: Info.Details
+  , internals :: [Info.Internal]
+  } deriving (Generic)
+
+instance Aeson.ToJSON Result
+
+run :: [FilePath] -> Task Error Result
+run infoFor = do
+  elmRoot <- Task.io $ FE.findUp ("elm" <.> "json")
   elmJson <- Elm.Json.load elmRoot
-  modulePaths <- Elmi.for elmRoot elmJson infoFor
-  result <- Aeson.encode <$> Async.mapConcurrently Info.for modulePaths
-  case maybeOutput of
-    Just output -> BL.writeFile output result
-    Nothing -> BL.putStr result
+  Elmi.Paths { Elmi.dependencyInterfacePath
+             , Elmi.interfacePaths
+             , Elmi.detailPaths
+             } <- Elmi.for elmRoot elmJson infoFor
+  dependencies <- Info.forDependencies dependencyInterfacePath
+  internals <- Async.mapConcurrently Info.forInternal interfacePaths
+  details <- Info.forDetails detailPaths
+  return Result {dependencies, internals, details}
 
-onError :: Args -> SomeException -> IO ()
-onError Args {infoFor} e =
-  mapM_ putStrLn
-    ["elmi-to-json failed" <> " for:", show infoFor, "", show e, ""]
+onError :: [FilePath] -> Error -> IO ()
+onError infoFor e =
+  putStrLn $
+  unlines ["elmi-to-json failed" <> " for:", show infoFor, "", show e, ""]

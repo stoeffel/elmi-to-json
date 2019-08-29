@@ -2,19 +2,26 @@
 
 module Elm.Interface
   ( Interface(..)
+  , DependencyInterface(..)
   , Binop(..)
   ) where
 
-import Control.Monad (liftM, liftM4, liftM5)
-import Data.Aeson ((.=))
-import Data.Binary
-import qualified Data.Map as Map
-
 import qualified AST.Canonical as Can
 import qualified AST.Utils.Binop as Binop
+import Control.Monad (liftM, liftM3, liftM4, liftM5)
+import Data.Aeson ((.=))
 import qualified Data.Aeson as Aeson
+import Data.Binary
+import qualified Data.Map as Map
 import qualified Data.Name as Name
 import qualified Elm.Package as Pkg
+
+-- DEPENDENCY INTERFACE
+data DependencyInterface
+  = Public Interface
+  | Private Pkg.Name
+            (Map.Map Name.Name Can.Union)
+            (Map.Map Name.Name Can.Alias)
 
 -- INTERFACE
 data Interface = Interface
@@ -52,16 +59,25 @@ instance Aeson.ToJSON Interface where
       , "binops" .= Aeson.toJSON _binops
       ]
 
+instance Aeson.ToJSON DependencyInterface where
+  toJSON (Public interface) = Aeson.object ["public" .= Aeson.toJSON interface]
+  toJSON (Private pkgName unions aliases) =
+    Aeson.object
+      [ "package_name" .= Aeson.toJSON pkgName
+      , "unions" .= Aeson.toJSON unions
+      , "aliases" .= Aeson.toJSON aliases
+      ]
+
 -- This is used in the json output
 data Scope
-  = Private
-  | Public (OpenOrClosed)
+  = ScopePrivate
+  | ScopePublic (OpenOrClosed)
   deriving (Show)
 
 instance Aeson.ToJSON Scope where
-  toJSON Private = "private"
-  toJSON (Public Open) = "public open"
-  toJSON (Public Closed) = "public closed"
+  toJSON ScopePrivate = "private"
+  toJSON (ScopePublic Open) = "public open"
+  toJSON (ScopePublic Closed) = "public closed"
 
 data OpenOrClosed
   = Open
@@ -70,17 +86,17 @@ data OpenOrClosed
 
 instance Aeson.ToJSON Union where
   toJSON (OpenUnion u) =
-    Aeson.object ["scope" .= Public Open, "definition" .= Aeson.toJSON u]
+    Aeson.object ["scope" .= ScopePublic Open, "definition" .= Aeson.toJSON u]
   toJSON (ClosedUnion u) =
-    Aeson.object ["scope" .= Public Closed, "definition" .= Aeson.toJSON u]
+    Aeson.object ["scope" .= ScopePublic Closed, "definition" .= Aeson.toJSON u]
   toJSON (PrivateUnion u) =
-    Aeson.object ["scope" .= Private, "definition" .= Aeson.toJSON u]
+    Aeson.object ["scope" .= ScopePrivate, "definition" .= Aeson.toJSON u]
 
 instance Aeson.ToJSON Alias where
   toJSON (PublicAlias a) =
-    Aeson.object ["scope" .= Public Open, "definition" .= Aeson.toJSON a]
+    Aeson.object ["scope" .= ScopePublic Open, "definition" .= Aeson.toJSON a]
   toJSON (PrivateAlias a) =
-    Aeson.object ["scope" .= Private, "definition" .= Aeson.toJSON a]
+    Aeson.object ["scope" .= ScopePrivate, "definition" .= Aeson.toJSON a]
 
 instance Aeson.ToJSON Binop where
   toJSON (Binop {_op_name, _op_annotation, _op_associativity, _op_precedence}) =
@@ -125,3 +141,15 @@ instance Binary Alias where
 instance Binary Binop where
   get = liftM4 Binop get get get get
   put (Binop a b c d) = put a >> put b >> put c >> put d
+
+instance Binary DependencyInterface where
+  put union =
+    case union of
+      Public a -> putWord8 0 >> put a
+      Private a b c -> putWord8 1 >> put a >> put b >> put c
+  get = do
+    n <- getWord8
+    case n of
+      0 -> liftM Public get
+      1 -> liftM3 Private get get get
+      _ -> fail "binary encoding of DependencyInterface was corrupted"

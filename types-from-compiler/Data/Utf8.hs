@@ -6,6 +6,9 @@ module Data.Utf8
   , getUnder256
   , putUnder256
   --
+  , getVeryLong
+  , putVeryLong
+  --
   , toChars
   --
   , fromChars
@@ -40,6 +43,7 @@ import GHC.IO
 import GHC.ST (ST(ST), runST)
 import GHC.Prim
 import GHC.Word (Word8(W8#))
+import Data.Binary (get, put)
 
 
 -- UTF-8
@@ -266,6 +270,25 @@ getUnder256 =
   do  word <- getWord8
       let !n = fromIntegral word
       readN n (copyFromByteString n)
+
+putVeryLong :: Utf8 t -> Put
+putVeryLong bytes =
+  do  put (size bytes)
+      putBuilder (toBuilder bytes)
+
+{-# NOINLINE empty #-}
+empty :: Utf8 t
+empty =
+  runST (freeze =<< newByteArray 0)
+
+
+getVeryLong :: Get (Utf8 t)
+getVeryLong =
+  do  n <- get
+      if n > 0
+        then readN n (copyFromByteString n)
+        else return empty
+
 
 -- COPY FROM BYTESTRING
 
