@@ -1,41 +1,44 @@
 module Elmi
-  ( for
-  , toModuleName
-  , InterfacePaths(..)
-  , Paths(..)
-  ) where
+  ( for,
+    toModuleName,
+    InterfacePaths (..),
+    Paths (..),
+  )
+where
 
 import Control.Applicative ((<|>))
 import qualified Data.Foldable as Foldable
 import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
-import Elm.Json (ElmJson(..))
+import Elm.Json (ElmJson (..))
 import qualified Elm.Json
 import qualified Error
 import Error (Error)
+import qualified Options
 import qualified Reporting.Task as Task
 import Reporting.Task (Task)
 import qualified System.Directory as Dir
-import System.FilePath (FilePath, (<.>), (</>))
+import System.FilePath ((<.>), (</>), FilePath)
 import qualified System.FilePath as F
 import qualified System.FilePath.Extra as FE
-import qualified Options
 
 toModuleName :: FilePath -> Text.Text
 toModuleName =
   Text.replace "-" "." . Text.pack . F.dropExtension . F.takeFileName
 
-data Paths = Paths
-  { interfacePaths :: [InterfacePaths]
-  , dependencyInterfacePath :: FilePath
-  , detailPaths :: FilePath
-  }
+data Paths
+  = Paths
+      { interfacePaths :: [InterfacePaths],
+        dependencyInterfacePath :: FilePath,
+        detailPaths :: FilePath
+      }
 
-data InterfacePaths = InterfacePaths
-  { interfacePath :: FilePath
-  , modulePath :: FilePath
-  }
+data InterfacePaths
+  = InterfacePaths
+      { interfacePath :: FilePath,
+        modulePath :: FilePath
+      }
 
 for :: FilePath -> Options.ElmVersion -> ElmJson -> [FilePath] -> Task Error Paths
 for elmRoot optionsElmVersion ElmJson {sourceDirecotries, elmVersion} subset = do
@@ -66,9 +69,8 @@ getElmVersion elmStuff optionsElmVersion elmVersion =
         Elm.Json.RangedVersion -> do
           elmStuffDirs <- FE.findAll Nothing elmStuff
           case reverse $ List.sort $ List.filter (/= "generated-code") elmStuffDirs of
-            version:_ -> pure $ ElmVersion $ Text.pack version
+            version : _ -> pure $ ElmVersion $ Text.pack version
             [] -> Task.throw Error.ElmStuffEmpty
-
 
 findElmStuffPath :: FilePath -> ElmVersion -> Task Error FilePath
 findElmStuffPath elmStuff (ElmVersion elmVersion) = do
@@ -89,7 +91,7 @@ allOrSubset subset (Just (paths@InterfacePaths {modulePath}))
 
 withModulePath :: [FilePath] -> FilePath -> IO (Maybe InterfacePaths)
 withModulePath [] _ = return Nothing
-withModulePath (dir:rest) interfacePath = do
+withModulePath (dir : rest) interfacePath = do
   let modulePath = dir </> elmiToModulePath interfacePath
   exists <- Dir.doesFileExist modulePath
   if exists
@@ -98,6 +100,9 @@ withModulePath (dir:rest) interfacePath = do
 
 elmiToModulePath :: FilePath -> FilePath
 elmiToModulePath =
-  flip F.addExtension "elm" .
-  Text.unpack .
-  Text.replace "-" "/" . Text.pack . F.dropExtension . F.takeFileName
+  flip F.addExtension "elm"
+    . Text.unpack
+    . Text.replace "-" "/"
+    . Text.pack
+    . F.dropExtension
+    . F.takeFileName

@@ -1,9 +1,10 @@
 module System.FilePath.Extra
-  ( findAll
-  , maybeMakeRelative
-  , dasherize
-  , findUp
-  ) where
+  ( findAll,
+    maybeMakeRelative,
+    dasherize,
+    findUp,
+  )
+where
 
 import qualified Data.List as L
 import qualified Data.Text as T
@@ -12,7 +13,7 @@ import qualified Error
 import qualified Reporting.Task as Task
 import Reporting.Task (Task)
 import qualified System.Directory as Dir
-import System.FilePath (FilePath, (</>))
+import System.FilePath ((</>), FilePath)
 import qualified System.FilePath as F
 
 findAll :: Maybe T.Text -> FilePath -> Task Error [FilePath]
@@ -25,8 +26,8 @@ findAll maybeExtension dir = do
         Nothing -> return contents
         Just extension ->
           return $
-          F.combine dir <$>
-          filter ((==) (T.unpack extension) . F.takeExtension) contents
+            F.combine dir
+              <$> filter ((==) (T.unpack extension) . F.takeExtension) contents
     else Task.throw (Error.DirectoryDoesntExist dir)
 
 findUp :: FilePath -> IO (Maybe FilePath)
@@ -47,8 +48,8 @@ parent :: FilePath -> Maybe FilePath
 parent path =
   case F.splitDirectories path of
     [] -> Nothing
-    _:[] -> Nothing
-    _:rest -> Just (F.joinPath rest)
+    _ : [] -> Nothing
+    _ : rest -> Just (F.joinPath rest)
 
 maybeMakeRelative :: FilePath -> FilePath -> Maybe FilePath
 maybeMakeRelative file dir =
