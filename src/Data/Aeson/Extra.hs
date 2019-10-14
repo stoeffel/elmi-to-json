@@ -1,8 +1,9 @@
 module Data.Aeson.Extra
-  ( mergeObjects
-  ) where
+  ( mergeObjects,
+  )
+where
 
-import Data.Aeson (Value(Object))
+import Data.Aeson (Value (Object))
 import qualified Data.HashMap.Lazy as HML
 
 mergeObjects :: [Value] -> Value

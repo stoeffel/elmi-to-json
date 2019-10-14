@@ -1,11 +1,12 @@
 module Info
-  ( Dependency(..)
-  , Internal(..)
-  , Details(..)
-  , forInternal
-  , forDependencies
-  , forDetails
-  ) where
+  ( Dependency (..),
+    Internal (..),
+    Details (..),
+    forInternal,
+    forDependencies,
+    forDetails,
+  )
+where
 
 import qualified AST.Canonical as Can
 import qualified Data.Aeson as Aeson
@@ -29,52 +30,54 @@ import Reporting.Task (Task)
 import System.FilePath (FilePath)
 
 data Dependency
-  = PrivateDependency ModuleName.Canonical
-                      (Map.Map Name.Name Can.Union)
-                      (Map.Map Name.Name Can.Alias)
-  | PublicDependency ModuleName.Canonical
-                     Interface
+  = PrivateDependency
+      ModuleName.Canonical
+      (Map.Map Name.Name Can.Union)
+      (Map.Map Name.Name Can.Alias)
+  | PublicDependency ModuleName.Canonical Interface
   deriving (Generic)
 
 instance Aeson.ToJSON Dependency where
   toJSON (PrivateDependency moduleName unions aliases) =
     Aeson.mergeObjects
       [ Aeson.object
-          [ "scope" .= ("private" :: String)
-          , "type" .= ("dependency" :: String)
-          , "unions" .= Aeson.toJSON unions
-          , "aliases" .= Aeson.toJSON aliases
-          ]
-      , Aeson.toJSON moduleName
+          [ "scope" .= ("private" :: String),
+            "type" .= ("dependency" :: String),
+            "unions" .= Aeson.toJSON unions,
+            "aliases" .= Aeson.toJSON aliases
+          ],
+        Aeson.toJSON moduleName
       ]
   toJSON (PublicDependency moduleName interface) =
     Aeson.mergeObjects
       [ Aeson.object
-          ["scope" .= ("public" :: String), "type" .= ("dependency" :: String)]
-      , Aeson.toJSON moduleName
-      , Aeson.toJSON interface
+          ["scope" .= ("public" :: String), "type" .= ("dependency" :: String)],
+        Aeson.toJSON moduleName,
+        Aeson.toJSON interface
       ]
 
-data Internal = Internal
-  { moduleName :: T.Text
-  , modulePath :: FilePath
-  , interface :: Interface
-  } deriving (Generic)
+data Internal
+  = Internal
+      { moduleName :: T.Text,
+        modulePath :: FilePath,
+        interface :: Interface
+      }
+  deriving (Generic)
 
 instance Aeson.ToJSON Internal where
   toJSON Internal {moduleName, modulePath, interface} =
     Aeson.mergeObjects
       [ Aeson.object
-          [ "module" .= Aeson.toJSON moduleName
-          , "path" .= Aeson.toJSON modulePath
-          , "scope" .= ("public" :: String)
-          , "type" .= ("internal" :: String)
-          ]
-      , Aeson.toJSON interface
+          [ "module" .= Aeson.toJSON moduleName,
+            "path" .= Aeson.toJSON modulePath,
+            "scope" .= ("public" :: String),
+            "type" .= ("internal" :: String)
+          ],
+        Aeson.toJSON interface
       ]
 
-newtype Details =
-  Details Elm.Details.Details
+newtype Details
+  = Details Elm.Details.Details
   deriving (Generic)
 
 instance Aeson.ToJSON Details where
@@ -91,12 +94,13 @@ forDependencies dependencyInterfacePath = do
     Right (interfaces) ->
       Traversable.for
         (Map.toList (interfaces :: Elm.Details.Interfaces))
-        (\(module', i) ->
-           case i of
-             Elm.Interface.Private _ unions aliases ->
-               return $ PrivateDependency module' unions aliases
-             Elm.Interface.Public interface ->
-               return $ PublicDependency module' interface)
+        ( \(module', i) ->
+            case i of
+              Elm.Interface.Private _ unions aliases ->
+                return $ PrivateDependency module' unions aliases
+              Elm.Interface.Public interface ->
+                return $ PublicDependency module' interface
+        )
 
 forDetails :: FilePath -> Task Error Details
 forDetails detailsPath = do
@@ -111,9 +115,8 @@ forInternal Elmi.InterfacePaths {Elmi.interfacePath, Elmi.modulePath} = do
   case result of
     Left (_, err) -> Task.throw (Error.DecodingElmiFailed err interfacePath)
     Right interface ->
-      return
-        Internal
-        { modulePath = modulePath
-        , moduleName = Elmi.toModuleName interfacePath
-        , interface = interface
+      return Internal
+        { modulePath = modulePath,
+          moduleName = Elmi.toModuleName interfacePath,
+          interface = interface
         }
