@@ -11,6 +11,7 @@ import qualified Data.List as List
 import qualified Data.Maybe as Maybe
 import qualified Data.Text as Text
 import Elm.Json (ElmJson(..))
+import qualified Elm.Json
 import qualified Error
 import Error (Error)
 import qualified Reporting.Task as Task
@@ -19,6 +20,7 @@ import qualified System.Directory as Dir
 import System.FilePath (FilePath, (<.>), (</>))
 import qualified System.FilePath as F
 import qualified System.FilePath.Extra as FE
+import qualified Options
 
 toModuleName :: FilePath -> Text.Text
 toModuleName =
@@ -35,9 +37,11 @@ data InterfacePaths = InterfacePaths
   , modulePath :: FilePath
   }
 
-for :: FilePath -> ElmJson -> [FilePath] -> Task Error Paths
-for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
-  elmStuffPath <- findElmStuffPath elmRoot elmJson
+for :: FilePath -> Options.ElmVersion -> ElmJson -> [FilePath] -> Task Error Paths
+for elmRoot optionsElmVersion ElmJson {sourceDirecotries, elmVersion} subset = do
+  let elmStuff = elmRoot </> "elm-stuff"
+  exactElmVersion <- getElmVersion elmStuff optionsElmVersion elmVersion
+  elmStuffPath <- findElmStuffPath elmStuff exactElmVersion
   let dependencyInterfacePath = elmStuffPath </> "i" <.> "dat"
   let detailPaths = elmStuffPath </> "d" <.> "dat"
   files <- FE.findAll (Just ".elmi") elmStuffPath
@@ -45,9 +49,29 @@ for elmRoot elmJson@ElmJson {sourceDirecotries} subset = do
   let interfacePaths = Maybe.mapMaybe (allOrSubset subset) unfilteredPaths
   return Paths {detailPaths, dependencyInterfacePath, interfacePaths}
 
-findElmStuffPath :: FilePath -> ElmJson -> Task Error FilePath
-findElmStuffPath elmRoot ElmJson {elmVersion} = do
-  let elmStuff = elmRoot </> "elm-stuff"
+newtype ElmVersion = ElmVersion Text.Text
+  deriving (Show)
+
+getElmVersion ::
+  FilePath ->
+  Options.ElmVersion ->
+  Elm.Json.ElmVersion ->
+  Task Error ElmVersion
+getElmVersion elmStuff optionsElmVersion elmVersion =
+  case optionsElmVersion of
+    Options.ElmVersion version -> pure (ElmVersion version)
+    Options.FromElmJson ->
+      case elmVersion of
+        Elm.Json.FixedVersion version -> pure (ElmVersion version)
+        Elm.Json.RangedVersion -> do
+          elmStuffDirs <- FE.findAll Nothing elmStuff
+          case reverse $ List.sort $ List.filter (/= "generated-code") elmStuffDirs of
+            version:_ -> pure $ ElmVersion $ Text.pack version
+            [] -> Task.throw Error.ElmStuffEmpty
+
+
+findElmStuffPath :: FilePath -> ElmVersion -> Task Error FilePath
+findElmStuffPath elmStuff (ElmVersion elmVersion) = do
   elmStuffDirs <- FE.findAll Nothing elmStuff
   let foundExact = Foldable.find ((==) elmVersion . Text.pack) elmStuffDirs
   let foundPrefix =

@@ -1,5 +1,6 @@
 module Elm.Json
   ( ElmJson(..)
+  , ElmVersion(..)
   , load
   ) where
 
@@ -15,14 +16,20 @@ import System.FilePath (FilePath, (<.>), (</>))
 
 data ElmJson = ElmJson
   { sourceDirecotries :: [FilePath]
-  , elmVersion :: T.Text
+  , elmVersion :: ElmVersion
   }
+
 
 instance Aeson.FromJSON ElmJson where
   parseJSON =
     Aeson.withObject "Coord" $ \v ->
       ElmJson <$> v .:? "source-directories" .!= ["src", "tests"] <*>
-      (T.takeWhile ((/=) ' ') <$> v .: "elm-version")
+      (parseVersion <$> v .: "elm-version")
+
+
+data ElmVersion
+  = FixedVersion T.Text
+  | RangedVersion
 
 load :: FilePath -> Task Error ElmJson
 load root = do
@@ -31,3 +38,11 @@ load root = do
   case Aeson.eitherDecode contents of
     Right json -> return json
     Left _ -> Task.throw (Error.DecodingElmJsonFailed elmJsonPath)
+
+
+parseVersion :: T.Text -> ElmVersion
+parseVersion str =
+  case T.words str of
+    [fixed] -> FixedVersion fixed
+    -- 0.19.0 <= v <= 0.20.0
+    _ -> RangedVersion

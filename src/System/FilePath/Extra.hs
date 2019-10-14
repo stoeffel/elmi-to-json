@@ -29,21 +29,26 @@ findAll maybeExtension dir = do
           filter ((==) (T.unpack extension) . F.takeExtension) contents
     else Task.throw (Error.DirectoryDoesntExist dir)
 
-findUp :: FilePath -> IO FilePath
+findUp :: FilePath -> IO (Maybe FilePath)
 findUp needle = do
   cwd <- Dir.getCurrentDirectory
   findUpHelp needle cwd
 
-findUpHelp :: FilePath -> FilePath -> IO FilePath
+findUpHelp :: FilePath -> FilePath -> IO (Maybe FilePath)
 findUpHelp needle dir = do
   exists <- Dir.doesFileExist (dir </> needle)
   if exists
-    then return dir
-    -- TODO check if root
-    else findUpHelp needle (parent dir)
+    then return (Just dir)
+    else case parent dir of
+      Just p -> findUpHelp needle p
+      Nothing -> pure Nothing
 
-parent :: FilePath -> FilePath
-parent = F.joinPath . init . F.splitDirectories
+parent :: FilePath -> Maybe FilePath
+parent path =
+  case F.splitDirectories path of
+    [] -> Nothing
+    _:[] -> Nothing
+    _:rest -> Just (F.joinPath rest)
 
 maybeMakeRelative :: FilePath -> FilePath -> Maybe FilePath
 maybeMakeRelative file dir =
