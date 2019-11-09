@@ -1,49 +1,56 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module AST.Canonical
-  ( Annotation(..)
-  , Alias(..)
-  , Union(..)
-  , CtorOpts
-  ) where
+  ( Annotation (..),
+    Alias (..),
+    Type (..),
+    Union (..),
+    CtorOpts,
+  )
+where
 
 import Control.Monad (liftM, liftM2, liftM3, liftM4, replicateM)
 import Data.Aeson ((.=))
 import qualified Data.Aeson as Aeson
 import Data.Binary
-import GHC.Generics (Generic)
-
 import qualified Data.Index as Index
 import qualified Data.Map as Map
 import Data.Name (Name)
 import qualified Elm.ModuleName as ModuleName
+import GHC.Generics (Generic)
 
 -- TYPES
-data Annotation =
-  Forall FreeVars
-         Type
+data Annotation
+  = Forall
+      FreeVars
+      Type
   deriving (Generic, Show)
 
 type FreeVars = Map.Map Name ()
 
 data Type
-  = TLambda Type
-            Type
+  = TLambda
+      Type
+      Type
   | TVar Name
-  | TType ModuleName.Canonical
-          Name
-          [Type]
-  | TRecord (Map.Map Name FieldType)
-            (Maybe Name)
+  | TType
+      ModuleName.Canonical
+      Name
+      [Type]
+  | TRecord
+      (Map.Map Name FieldType)
+      (Maybe Name)
   | TUnit
-  | TTuple Type
-           Type
-           (Maybe Type)
-  | TAlias ModuleName.Canonical
-           Name
-           [(Name, Type)]
-           AliasType
+  | TTuple
+      Type
+      Type
+      (Maybe Type)
+  | TAlias
+      ModuleName.Canonical
+      Name
+      [(Name, Type)]
+      AliasType
   deriving (Generic, Show)
 
 data AliasType
@@ -51,22 +58,26 @@ data AliasType
   | Filled Type
   deriving (Generic, Show)
 
-data FieldType =
-  FieldType {-# UNPACK #-}!Word16
-            Type
+data FieldType
+  = FieldType
+      {-# UNPACK #-} !Word16
+      Type
   deriving (Show)
 
-data Alias =
-  Alias [Name]
-        Type
+data Alias
+  = Alias
+      [Name]
+      Type
   deriving (Show)
 
-data Union = Union
-  { _u_vars :: [Name]
-  , _u_alts :: [Ctor]
-  , _u_numAlts :: Int -- CACHE numAlts for exhaustiveness checking
-  , _u_opts :: CtorOpts -- CACHE which optimizations are available
-  } deriving (Show)
+data Union
+  = Union
+      { _u_vars :: [Name],
+        _u_alts :: [Ctor],
+        _u_numAlts :: Int, -- CACHE numAlts for exhaustiveness checking
+        _u_opts :: CtorOpts -- CACHE which optimizations are available
+      }
+  deriving (Show)
 
 data CtorOpts
   = Normal
@@ -74,11 +85,12 @@ data CtorOpts
   | Unbox
   deriving (Eq, Ord, Show)
 
-data Ctor =
-  Ctor Name
-       Index.ZeroBased
-       Int
-       [Type] -- CACHE length args
+data Ctor
+  = Ctor
+      Name
+      Index.ZeroBased
+      Int
+      [Type] -- CACHE length args
   deriving (Show)
 
 -- JSON
@@ -99,39 +111,39 @@ data TypeInJson
 instance Aeson.ToJSON Type where
   toJSON (TType moduleName name vars) =
     Aeson.object
-      [ "type" .= Type
-      , "moduleName" .= moduleName
-      , "name" .= name
-      , "vars" .= vars
+      [ "type" .= Type,
+        "moduleName" .= moduleName,
+        "name" .= name,
+        "vars" .= vars
       ]
   toJSON (TVar name) = Aeson.object ["type" .= Var, "name" .= name]
   toJSON (TRecord fields maybeName) =
     Aeson.object $
-    concat
-      [ ["type" .= Record]
-      , ["fields" .= fields]
-      , case maybeName of
-          Just name -> ["extends" .= name]
-          Nothing -> []
-      ]
+      concat
+        [ ["type" .= Record],
+          ["fields" .= fields],
+          case maybeName of
+            Just name -> ["extends" .= name]
+            Nothing -> []
+        ]
   toJSON TUnit = Aeson.object ["type" .= Unit]
   toJSON (TTuple a b maybeC) =
     Aeson.object $
-    concat
-      [ ["type" .= Tuple]
-      , ["_1" .= a]
-      , ["_2" .= b]
-      , case maybeC of
-          Just c -> ["_3" .= c]
-          Nothing -> []
-      ]
+      concat
+        [ ["type" .= Tuple],
+          ["_1" .= a],
+          ["_2" .= b],
+          case maybeC of
+            Just c -> ["_3" .= c]
+            Nothing -> []
+        ]
   toJSON (TAlias moduleName name fields aliasType) =
     Aeson.object
-      [ "type" .= Aliased
-      , "moduleName" .= moduleName
-      , "name" .= name
-      , "fields" .= fields
-      , "aliasType" .= aliasType
+      [ "type" .= Aliased,
+        "moduleName" .= moduleName,
+        "name" .= name,
+        "fields" .= fields,
+        "aliasType" .= aliasType
       ]
   toJSON (lambda@(TLambda _ _)) =
     Aeson.object ["lambda" .= flattenLambda lambda]
@@ -162,23 +174,31 @@ ctorPair (Ctor name _ _ types) = (name, types)
 
 -- BINARY
 instance Binary Alias where
+
   get = liftM2 Alias get get
+
   put (Alias a b) = put a >> put b
 
 instance Binary Union where
+
   put (Union a b c d) = put a >> put b >> put c >> put d
+
   get = liftM4 Union get get get get
 
 instance Binary Ctor where
+
   get = liftM4 Ctor get get get get
+
   put (Ctor a b c d) = put a >> put b >> put c >> put d
 
 instance Binary CtorOpts where
+
   put opts =
     case opts of
       Normal -> putWord8 0
       Enum -> putWord8 1
       Unbox -> putWord8 2
+
   get = do
     n <- getWord8
     case n of
@@ -188,10 +208,13 @@ instance Binary CtorOpts where
       _ -> error "binary encoding of CtorOpts was corrupted"
 
 instance Binary Annotation where
+
   get = liftM2 Forall get get
+
   put (Forall a b) = put a >> put b
 
 instance Binary Type where
+
   put tipe =
     case tipe of
       TLambda a b -> putWord8 0 >> put a >> put b
@@ -202,13 +225,14 @@ instance Binary Type where
       TAlias a b c d -> putWord8 5 >> put a >> put b >> put c >> put d
       TType home name ts ->
         let potentialWord = length ts + 7
-        in if potentialWord <= fromIntegral (maxBound :: Word8)
-             then do
-               putWord8 (fromIntegral potentialWord)
-               put home
-               put name
-               mapM_ put ts
-             else putWord8 6 >> put home >> put name >> put ts
+         in if potentialWord <= fromIntegral (maxBound :: Word8)
+              then do
+                putWord8 (fromIntegral potentialWord)
+                put home
+                put name
+                mapM_ put ts
+              else putWord8 6 >> put home >> put name >> put ts
+
   get = do
     word <- getWord8
     case word of
@@ -222,10 +246,12 @@ instance Binary Type where
       n -> liftM3 TType get get (replicateM (fromIntegral (n - 7)) get)
 
 instance Binary AliasType where
+
   put aliasType =
     case aliasType of
       Holey tipe -> putWord8 0 >> put tipe
       Filled tipe -> putWord8 1 >> put tipe
+
   get = do
     n <- getWord8
     case n of
@@ -234,5 +260,7 @@ instance Binary AliasType where
       _ -> error "binary encoding of AliasType was corrupted"
 
 instance Binary FieldType where
+
   get = liftM2 FieldType get get
+
   put (FieldType a b) = put a >> put b
