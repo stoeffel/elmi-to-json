@@ -28,16 +28,14 @@ main = do
   mode <- Options.parse
   case mode of
     Options.Version -> putStrLn (showVersion version)
-    Options.Run Options.ForElmTest Options {files, output, elmVersion} -> do
+    Options.Run runMode Options {files, output, elmVersion} -> do
       result <- Task.run (run elmVersion files)
       case result of
         Left err -> onError files err
-        Right val -> printOutput output (Aeson.encode $ ForElmTest.fromResult val)
-    Options.Run Options.Normal Options {files, output, elmVersion} -> do
-      result <- Task.run (run elmVersion files)
-      case result of
-        Left err -> onError files err
-        Right val -> printOutput output (Aeson.encode val)
+        Right val -> printOutput output $
+          case runMode of
+            Options.ForElmTest -> Aeson.encode (ForElmTest.fromResult val)
+            Options.Normal -> Aeson.encode val
 
 printOutput :: Options.Output -> BL.ByteString -> IO ()
 printOutput output content =
