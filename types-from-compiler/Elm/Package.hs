@@ -1,9 +1,11 @@
-{-# OPTIONS_GHC -Wall #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# OPTIONS_GHC -Wall #-}
 
 module Elm.Package
-  ( Name(..)
-  ) where
+  ( Name (..),
+    toChars,
+  )
+where
 
 import Control.Monad (liftM2)
 import qualified Data.Aeson as Aeson
@@ -14,10 +16,12 @@ import qualified Data.Text as T
 import qualified Data.Utf8 as Utf8
 
 -- PACKGE NAMES
-data Name = Name
-  { _author :: !Author
-  , _project :: !Project
-  } deriving (Eq, Ord)
+data Name
+  = Name
+      { _author :: !Author,
+        _project :: !Project
+      }
+  deriving (Eq, Ord)
 
 type Author = Utf8.Utf8 AUTHOR
 
@@ -43,7 +47,8 @@ instance Aeson.ToJSONKey Name where
     Aeson.ToJSONKeyText (T.pack . toChars) (Encoding.text . T.pack . toChars)
 
 -- BINARY
-instance Binary Name -- PERF try storing as a Word16
-                                                     where
+instance Binary Name where -- PERF try storing as a Word16
+
   get = liftM2 Name Utf8.getUnder256 Utf8.getUnder256
+
   put (Name a b) = Utf8.putUnder256 a >> Utf8.putUnder256 b

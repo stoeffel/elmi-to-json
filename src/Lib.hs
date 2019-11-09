@@ -10,7 +10,7 @@ import qualified Elm.Json
 import qualified Elmi
 import Error (Error)
 import qualified Error
-import GHC.Generics (Generic)
+import qualified ForElmTest
 import qualified Info
 import qualified Options
 import Options (Options (..))
@@ -18,6 +18,8 @@ import Paths_elmi_to_json (version)
 import qualified Reporting.Task as Task
 import Reporting.Task (Task)
 import qualified Reporting.Task.Async as Async
+import qualified Result
+import Result (Result (Result))
 import System.FilePath ((<.>))
 import qualified System.FilePath.Extra as FE
 
@@ -26,25 +28,22 @@ main = do
   mode <- Options.parse
   case mode of
     Options.Version -> putStrLn (showVersion version)
-    Options.Run Options {files, output, elmVersion} -> do
+    Options.Run Options.ForElmTest Options {files, output, elmVersion} -> do
       result <- Task.run (run elmVersion files)
       case result of
         Left err -> onError files err
-        Right val -> do
-          let json = Aeson.encode val
-          case output of
-            Options.OutputFile output' -> BL.writeFile output' json
-            Options.OutputStdout -> BL.putStr json
+        Right val -> printOutput output (Aeson.encode $ ForElmTest.fromResult val)
+    Options.Run Options.Normal Options {files, output, elmVersion} -> do
+      result <- Task.run (run elmVersion files)
+      case result of
+        Left err -> onError files err
+        Right val -> printOutput output (Aeson.encode val)
 
-data Result
-  = Result
-      { dependencies :: [Info.Dependency],
-        details :: Info.Details,
-        internals :: [Info.Internal]
-      }
-  deriving (Generic)
-
-instance Aeson.ToJSON Result
+printOutput :: Options.Output -> BL.ByteString -> IO ()
+printOutput output content =
+  case output of
+    Options.OutputFile output' -> BL.writeFile output' content
+    Options.OutputStdout -> BL.putStr content
 
 run :: Options.ElmVersion -> [FilePath] -> Task Error Result
 run elmVersion files = do
@@ -63,7 +62,7 @@ run elmVersion files = do
   dependencies <- Info.forDependencies dependencyInterfacePath
   internals <- Async.mapConcurrently Info.forInternal interfacePaths
   details <- Info.forDetails detailPaths
-  return Result {dependencies, internals, details}
+  return Result {Result.dependencies, Result.internals, Result.details}
 
 onError :: [FilePath] -> Error -> IO ()
 onError files e =

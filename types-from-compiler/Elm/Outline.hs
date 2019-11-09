@@ -1,9 +1,11 @@
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# OPTIONS_GHC -Wall #-}
-{-# LANGUAGE MultiWayIf, OverloadedStrings #-}
 
 module Elm.Outline
-  ( SrcDir(..)
-  ) where
+  ( SrcDir (..),
+  )
+where
 
 import Control.Monad (liftM)
 import qualified Data.Aeson as Aeson
@@ -15,10 +17,12 @@ data SrcDir
 
 -- BINARY
 instance Binary SrcDir where
+
   put outline =
     case outline of
       AbsoluteSrcDir a -> putWord8 0 >> put a
       RelativeSrcDir a -> putWord8 1 >> put a
+
   get = do
     n <- getWord8
     case n of

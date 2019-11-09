@@ -1,22 +1,26 @@
-{-# LANGUAGE BangPatterns, OverloadedStrings, UnboxedTuples #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Elm.ModuleName
-  ( Canonical(..)
-  ) where
+  ( Canonical (..),
+  )
+where
 
 import Control.Monad (liftM2)
 import Data.Aeson ((.=))
 import qualified Data.Aeson as Aeson
-import Data.Binary (Binary(..))
+import Data.Binary (Binary (..))
 import qualified Data.Name as Name
-
 import qualified Elm.Package as Pkg
 
 -- CANONICAL
-data Canonical = Canonical
-  { _package :: !Pkg.Name
-  , _module :: !Name.Name
-  } deriving (Show)
+data Canonical
+  = Canonical
+      { _package :: !Pkg.Name,
+        _module :: !Name.Name
+      }
+  deriving (Show)
 
 -- JSON
 instance Aeson.ToJSON Canonical where
@@ -37,5 +41,7 @@ instance Ord Canonical where
       GT -> GT
 
 instance Binary Canonical where
+
   put (Canonical a b) = put a >> put b
+
   get = liftM2 Canonical get get
