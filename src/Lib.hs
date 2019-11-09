@@ -26,7 +26,7 @@ main = do
   mode <- Options.parse
   case mode of
     Options.Version -> putStrLn (showVersion version)
-    Options.Run Options {files, output, elmVersion} -> do
+    Options.Run _ Options {files, output, elmVersion} -> do
       result <- Task.run (run elmVersion files)
       case result of
         Left err -> onError files err

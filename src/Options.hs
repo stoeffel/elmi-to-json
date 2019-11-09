@@ -4,6 +4,7 @@ module Options
   ( parse,
     Options (..),
     Mode (..),
+    RunMode (..),
     ElmVersion (..),
     Output (..),
   )
@@ -15,7 +16,11 @@ import qualified Data.Text as T
 import qualified Options.Applicative as Opts
 import Options.Applicative (help, long, metavar, short, str)
 
-data Mode = Version | Run Options
+data Mode = Version | Run RunMode Options
+
+data RunMode
+  = Normal
+  | ForElmTest
 
 data Options
   = Options
@@ -34,7 +39,7 @@ data ElmVersion
 
 parse :: IO Mode
 parse = do
-  (options, version) <-
+  (options, runMode, version) <-
     Opts.execParser $
       Opts.info
         (Opts.helper <*> parser)
@@ -43,9 +48,9 @@ parse = do
         )
   if version
     then return Version
-    else return (Run options)
+    else return (Run runMode options)
 
-parser :: Opts.Parser (Options, Bool)
+parser :: Opts.Parser (Options, RunMode, Bool)
 parser = do
   files <-
     positionalArguments
@@ -59,14 +64,22 @@ parser = do
     optional
       FromElmJson
       ElmVersion
-      [ long "elm-version",
-        help "Specify elm-compiler version used to compile your code. Default: defined in elm.json or highest found in elm-stuff."
+      [ long "elm-version"
+          <> help "Specify elm-compiler version used to compile your code. Default: defined in elm.json or highest found in elm-stuff."
       ]
+  runMode <-
+    Opts.flag
+      Normal
+      ForElmTest
+      $ mconcat
+        [ long "for-elm-test",
+          help "Specialized output for internal usage in elm-test."
+        ]
   version <-
     Opts.switch $
       mconcat
         [long "version", short 'v', help "Display elmi-to-json version."]
-  return (Options {files, output, elmVersion}, version)
+  return (Options {files, output, elmVersion}, runMode, version)
 
 positionalArguments :: [Opts.Mod Opts.ArgumentFields FilePath] -> Opts.Parser [FilePath]
 positionalArguments = Opts.many . Opts.argument str . mconcat
