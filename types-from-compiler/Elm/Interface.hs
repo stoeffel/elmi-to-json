@@ -1,10 +1,11 @@
 {-# OPTIONS_GHC -Wall #-}
 
 module Elm.Interface
-  ( Interface(..)
-  , DependencyInterface(..)
-  , Binop(..)
-  ) where
+  ( Interface (..),
+    DependencyInterface (..),
+    Binop (..),
+  )
+where
 
 import qualified AST.Canonical as Can
 import qualified AST.Utils.Binop as Binop
@@ -19,18 +20,20 @@ import qualified Elm.Package as Pkg
 -- DEPENDENCY INTERFACE
 data DependencyInterface
   = Public Interface
-  | Private Pkg.Name
-            (Map.Map Name.Name Can.Union)
-            (Map.Map Name.Name Can.Alias)
+  | Private
+      Pkg.Name
+      (Map.Map Name.Name Can.Union)
+      (Map.Map Name.Name Can.Alias)
 
 -- INTERFACE
-data Interface = Interface
-  { _home :: Pkg.Name
-  , _values :: Map.Map Name.Name Can.Annotation
-  , _unions :: Map.Map Name.Name Union
-  , _aliases :: Map.Map Name.Name Alias
-  , _binops :: Map.Map Name.Name Binop
-  }
+data Interface
+  = Interface
+      { _home :: Pkg.Name,
+        _values :: Map.Map Name.Name Can.Annotation,
+        _unions :: Map.Map Name.Name Union,
+        _aliases :: Map.Map Name.Name Alias,
+        _binops :: Map.Map Name.Name Binop
+      }
 
 data Union
   = OpenUnion Can.Union
@@ -41,31 +44,32 @@ data Alias
   = PublicAlias Can.Alias
   | PrivateAlias Can.Alias
 
-data Binop = Binop
-  { _op_name :: Name.Name
-  , _op_annotation :: Can.Annotation
-  , _op_associativity :: Binop.Associativity
-  , _op_precedence :: Binop.Precedence
-  }
+data Binop
+  = Binop
+      { _op_name :: Name.Name,
+        _op_annotation :: Can.Annotation,
+        _op_associativity :: Binop.Associativity,
+        _op_precedence :: Binop.Precedence
+      }
 
 -- JSON
 instance Aeson.ToJSON Interface where
   toJSON (Interface {_home, _values, _unions, _aliases, _binops}) =
     Aeson.object
-      [ "home" .= Aeson.toJSON _home
-      , "values" .= Aeson.toJSON _values
-      , "unions" .= Aeson.toJSON _unions
-      , "aliases" .= Aeson.toJSON _aliases
-      , "binops" .= Aeson.toJSON _binops
+      [ "home" .= Aeson.toJSON _home,
+        "values" .= Aeson.toJSON _values,
+        "unions" .= Aeson.toJSON _unions,
+        "aliases" .= Aeson.toJSON _aliases,
+        "binops" .= Aeson.toJSON _binops
       ]
 
 instance Aeson.ToJSON DependencyInterface where
   toJSON (Public interface) = Aeson.object ["public" .= Aeson.toJSON interface]
   toJSON (Private pkgName unions aliases) =
     Aeson.object
-      [ "package_name" .= Aeson.toJSON pkgName
-      , "unions" .= Aeson.toJSON unions
-      , "aliases" .= Aeson.toJSON aliases
+      [ "package_name" .= Aeson.toJSON pkgName,
+        "unions" .= Aeson.toJSON unions,
+        "aliases" .= Aeson.toJSON aliases
       ]
 
 -- This is used in the json output
@@ -101,23 +105,27 @@ instance Aeson.ToJSON Alias where
 instance Aeson.ToJSON Binop where
   toJSON (Binop {_op_name, _op_annotation, _op_associativity, _op_precedence}) =
     Aeson.object
-      [ "name" .= Aeson.toJSON _op_name
-      , "annotation" .= Aeson.toJSON _op_annotation
-      , "associativity" .= Aeson.toJSON _op_associativity
-      , "precedence" .= Aeson.toJSON _op_precedence
+      [ "name" .= Aeson.toJSON _op_name,
+        "annotation" .= Aeson.toJSON _op_annotation,
+        "associativity" .= Aeson.toJSON _op_associativity,
+        "precedence" .= Aeson.toJSON _op_precedence
       ]
 
 -- BINARY
 instance Binary Interface where
+
   get = liftM5 Interface get get get get get
+
   put (Interface a b c d e) = put a >> put b >> put c >> put d >> put e
 
 instance Binary Union where
+
   put union =
     case union of
       OpenUnion u -> putWord8 0 >> put u
       ClosedUnion u -> putWord8 1 >> put u
       PrivateUnion u -> putWord8 2 >> put u
+
   get = do
     n <- getWord8
     case n of
@@ -127,10 +135,12 @@ instance Binary Union where
       _ -> error "binary encoding of Union was corrupted"
 
 instance Binary Alias where
+
   put union =
     case union of
       PublicAlias a -> putWord8 0 >> put a
       PrivateAlias a -> putWord8 1 >> put a
+
   get = do
     n <- getWord8
     case n of
@@ -139,14 +149,18 @@ instance Binary Alias where
       _ -> fail "binary encoding of Alias was corrupted"
 
 instance Binary Binop where
+
   get = liftM4 Binop get get get get
+
   put (Binop a b c d) = put a >> put b >> put c >> put d
 
 instance Binary DependencyInterface where
+
   put union =
     case union of
       Public a -> putWord8 0 >> put a
       Private a b c -> putWord8 1 >> put a >> put b >> put c
+
   get = do
     n <- getWord8
     case n of
