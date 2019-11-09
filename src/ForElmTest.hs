@@ -7,6 +7,7 @@ import Data.Maybe (mapMaybe)
 import qualified Data.Name as Name
 import qualified Data.Text as T
 import Data.Text (Text)
+import qualified Elm.Details
 import Elm.Interface
 import qualified Elm.ModuleName as ModuleName
 import qualified Elm.Package as Pkg
@@ -16,8 +17,7 @@ import qualified Result
 
 data ResultForElmTest
   = ResultForElmTest
-      { dependencies :: [Info.Dependency],
-        details :: Info.Details,
+      { outline :: Elm.Details.ValidOutline,
         testModules :: [TestModule]
       }
   deriving (Generic)
@@ -35,11 +35,11 @@ data TestModule
 instance Aeson.ToJSON TestModule
 
 fromResult :: Result.Result -> ResultForElmTest
-fromResult Result.Result {Result.dependencies, Result.details, Result.internals} =
+fromResult Result.Result {Result.details, Result.internals} =
   ResultForElmTest
     { testModules = mapMaybe toTestModules internals,
-      dependencies,
-      details
+      outline = case details of
+        Info.Details Elm.Details.Details {Elm.Details._outline} -> _outline
     }
 
 toTestModules :: Info.Internal -> Maybe TestModule
