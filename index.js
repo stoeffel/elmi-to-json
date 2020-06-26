@@ -15,6 +15,7 @@ module.exports = binwrap({
   binaries: ["elmi-to-json"],
   urls: {
     "darwin-x64": root + "-osx.tar.gz",
+    "freebsd-x64": root + "-freebsd.tar.gz",
     "linux-x64": root + "-linux.tar.gz",
     "win32-x64": root + "-win32-x64.zip",
     "win32-ia32": root + "-win32-ia32.zip"
