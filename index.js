@@ -15,6 +15,7 @@ module.exports = binwrap({
   binaries: ["elmi-to-json"],
   urls: {
     "darwin-x64": root + "-osx.tar.gz",
+    "darwin-arm64": root + "-osx.tar.gz", // Apple M1 chips support x64 emulation so we can re-use it for now
     "linux-x64": root + "-linux.tar.gz",
     "win32-x64": root + "-win32-x64.zip",
     "win32-ia32": root + "-win32-ia32.zip"
