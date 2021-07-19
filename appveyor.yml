@@ -36,7 +36,7 @@ artifacts:
 deploy:
   provider: GitHub
   auth_token:
-    secure: TRjMVOGURUeTGTWXgKxKKFX/I6GD/4GLPsP5gIAt1usgeNGbVXelQPsYglmvfYpN
+    secure: fuG2dt0vdyWGkD3uNejcpEYr5iSCiXYN/QmkjP+mRuRf+OSsGpyV+hc9ZzUmOgDD
   artifact: elmi-to-json-%APPVEYOR_REPO_TAG_NAME%-$(plat)-$(arch).zip
   draft: false
   prerelease: false
